@@ -180,7 +180,7 @@ export function CmReportGlobalConfigEditor(props: CmReportGlobalConfigEditorProp
 
       {value.logoUrl ? (
         <div className="cm-report-config__logo-preview">
-          {/* eslint-disable-next-line @next/next/no-img-element -- preview simples, fora do Next */}
+          {/* <img> nativo de propósito: preview simples de data URI/URL, sem otimizador de framework. */}
           <img
             src={value.logoUrl}
             alt={l.logoPreviewAlt}
