@@ -64,7 +64,7 @@ async function addColumn(user: UserEvent, fieldLabel: string): Promise<void> {
     .closest(".cm-report-designer__source-field");
   if (!row) throw new Error(`Linha do campo "${fieldLabel}" não encontrada`);
   const addButton = within(row as HTMLElement).getByRole("button", {
-    name: "Adicionar como coluna",
+    name: /^Adicionar como coluna/,
   });
   await user.click(addButton);
 }
@@ -202,7 +202,7 @@ describe("CmReportDesigner", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("campo já adicionado como coluna: o botão 'Adicionar como coluna' correspondente fica desabilitado", async () => {
+  it("campo já adicionado como coluna: o botão some e o estado 'Coluna já adicionada' aparece", async () => {
     const user = userEvent.setup();
     const adapter = createMemoryReportAdapter();
 
@@ -219,11 +219,12 @@ describe("CmReportDesigner", () => {
       .closest(".cm-report-designer__source-field");
     if (!clienteRow || !totalRow) throw new Error("linhas de campo não encontradas");
 
+    // UI nova: o botão de adicionar é substituído pelo check "Coluna já adicionada".
     expect(
-      within(clienteRow as HTMLElement).getByRole("button", { name: "Adicionar como coluna" }),
-    ).toBeDisabled();
+      within(clienteRow as HTMLElement).queryByRole("button", { name: /^Adicionar como coluna/ }),
+    ).not.toBeInTheDocument();
     expect(
-      within(totalRow as HTMLElement).getByRole("button", { name: "Adicionar como coluna" }),
+      within(totalRow as HTMLElement).getByRole("button", { name: /^Adicionar como coluna/ }),
     ).not.toBeDisabled();
     expect(within(clienteRow as HTMLElement).getByText("Coluna já adicionada")).toBeInTheDocument();
   });

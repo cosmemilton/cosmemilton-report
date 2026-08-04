@@ -1,10 +1,8 @@
-/* Estilos do CmReportLayoutEditor (Fase 8), do CmReportPdfPreview (Fase 9, classes
- * `cm-report-preview__*` — o editor encaixa o preview dentro de `.cm-report-editor__preview`) e do
- * CmReportDesigner (Fase 10, classes `cm-report-designer__*` ao final deste arquivo — reaproveita
- * várias classes `cm-report-editor__*` para a lista de colunas). Classes BEM
- * `cm-report-editor__*`/`cm-report-preview__*`/`cm-report-designer__*`, tokens do tema do
- * cosmemilton-ui com fallbacks neutros (para quem usa o pacote sem o tema do cosmemilton-ui
- * carregado). */
+/* Estilos do CmReportLayoutEditor, CmReportPdfPreview, CmReportDesigner e
+ * CmReportGlobalConfigEditor. Classes BEM `cm-report-editor__*`/`cm-report-preview__*`/
+ * `cm-report-designer__*`/`cm-report-config__*`, tokens do tema do cosmemilton-ui com fallbacks
+ * neutros (para quem usa o pacote sem o tema carregado). O editor e o designer compartilham as
+ * classes de lista de colunas e de linhas de switch. */
 
 .cm-report-editor {
   display: flex;
@@ -47,7 +45,9 @@
   top: var(--space-md, 16px);
 }
 
-/* ---- aba Colunas ---- */
+/* ---- aba Colunas — cartão por coluna em 2 andares:
+ * [ switch | rótulo ............ | ações (ícones) ]
+ * [ largura | alinhamento | formato ............. ] ---- */
 
 .cm-report-editor__column-list {
   display: flex;
@@ -57,63 +57,105 @@
 
 .cm-report-editor__column-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "visibility header actions"
+    "details details details";
   align-items: center;
   gap: var(--space-sm, 8px);
-  padding: var(--space-sm, 8px);
+  padding: var(--space-sm, 10px) var(--space-md, 14px);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 8px);
   background: var(--color-card, #ffffff);
 }
 
+.cm-report-editor__column-visibility {
+  grid-area: visibility;
+}
+
 .cm-report-editor__column-visibility-placeholder {
+  grid-area: visibility;
   display: inline-block;
   width: 36px;
 }
 
-.cm-report-editor__column-fields {
+.cm-report-editor__column-header-field {
+  grid-area: header;
+  min-width: 0;
+}
+
+.cm-report-editor__column-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs, 4px);
+}
+
+.cm-report-editor__column-details {
+  grid-area: details;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: var(--space-sm, 8px);
+  padding-top: var(--space-sm, 8px);
+  border-top: 1px dashed color-mix(in srgb, var(--color-border, #d1d5db) 70%, transparent);
+}
+
+/* Coluna oculta pelo switch: mantém o cartão utilizável, mas sinaliza o estado. */
+.cm-report-editor__column-row--hidden .cm-report-editor__column-header-field,
+.cm-report-editor__column-row--hidden .cm-report-editor__column-details {
+  opacity: 0.55;
 }
 
 .cm-report-editor__column-field--width {
   min-width: 0;
 }
 
-.cm-report-editor__column-actions {
+/* ---- linhas de switch (Cabeçalho/Estilo/Agrupamento): rótulo à esquerda, switch à direita ---- */
+
+.cm-report-editor__switch-list {
   display: flex;
-  gap: var(--space-xs, 4px);
+  flex-direction: column;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.cm-report-editor__switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-sm, 8px) var(--space-md, 12px);
+}
+
+.cm-report-editor__switch-row + .cm-report-editor__switch-row {
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #d1d5db) 60%, transparent);
+}
+
+.cm-report-editor__switch-row:hover {
+  background: color-mix(in srgb, var(--color-muted, #f3f4f6) 60%, transparent);
+}
+
+.cm-report-editor__switch-row-label {
+  font-size: 0.875rem;
+  min-width: 0;
 }
 
 /* ---- aba Cabeçalho ---- */
 
 .cm-report-editor__header-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: var(--space-md, 16px);
 }
 
-.cm-report-editor__switch-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs, 4px);
+.cm-report-editor__header-grid > .cm-report-editor__switch-list {
   grid-column: 1 / -1;
 }
 
-.cm-report-editor__switch-field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm, 8px);
-  padding: var(--space-xs, 4px) 0;
-}
-
-.cm-report-editor__switch-field .cm-field__header {
-  margin: 0;
-}
-
-/* ---- aba Sumário ---- */
+/* ---- aba Sumário — cartão por item em 2 andares:
+ * [ rótulo .................... | remover (ícone) ]
+ * [ coluna-fonte | operação | formato ........... ] ---- */
 
 .cm-report-editor__summary-list {
   display: flex;
@@ -129,13 +171,34 @@
 
 .cm-report-editor__summary-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) auto;
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label remove"
+    "details details";
+  align-items: center;
   gap: var(--space-sm, 8px);
-  padding: var(--space-sm, 8px);
+  padding: var(--space-sm, 10px) var(--space-md, 14px);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 8px);
   background: var(--color-card, #ffffff);
+}
+
+.cm-report-editor__summary-label-field {
+  grid-area: label;
+  min-width: 0;
+}
+
+.cm-report-editor__summary-remove {
+  grid-area: remove;
+}
+
+.cm-report-editor__summary-details {
+  grid-area: details;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-sm, 8px);
+  padding-top: var(--space-sm, 8px);
+  border-top: 1px dashed color-mix(in srgb, var(--color-border, #d1d5db) 70%, transparent);
 }
 
 .cm-report-editor__summary-add {
@@ -146,9 +209,14 @@
 
 .cm-report-editor__style-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: var(--space-md, 16px);
   align-items: end;
+}
+
+.cm-report-editor__style-grid > .cm-report-editor__switch-list {
+  grid-column: 1 / -1;
+  align-self: stretch;
 }
 
 .cm-report-editor__color-field {
@@ -160,6 +228,12 @@
 .cm-report-editor__color-label {
   font-size: 0.875rem;
   color: var(--color-muted-foreground, #6b7280);
+}
+
+.cm-report-editor__color-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
 }
 
 .cm-report-editor__color-input {
@@ -177,7 +251,14 @@
   opacity: 0.6;
 }
 
-/* ---- CmReportPdfPreview (Fase 9) ---- */
+.cm-report-editor__color-value {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground, #6b7280);
+  text-transform: uppercase;
+}
+
+/* ---- CmReportPdfPreview ---- */
 
 .cm-report-preview {
   position: relative;
@@ -215,10 +296,9 @@
   text-align: center;
 }
 
-/* ---- CmReportDesigner (Fase 10) — reaproveita as classes `cm-report-editor__column-*` acima
- * para a lista de colunas (mesma UI visual da aba Colunas do editor) e `cm-report-editor__switch-
- * field` para o switch de subtotal do agrupamento; classes próprias só para o que é exclusivo do
- * designer: cabeçalho do form, lista de campos da fonte, agrupamento e rodapé. ---- */
+/* ---- CmReportDesigner — reaproveita as classes `cm-report-editor__column-*` e
+ * `cm-report-editor__switch-*` acima; classes próprias só para o que é exclusivo:
+ * cabeçalho do form, lista de campos da fonte, agrupamento e rodapé. ---- */
 
 .cm-report-designer {
   display: flex;
@@ -248,30 +328,42 @@
 /* ---- lista de campos da fonte selecionada ("Adicionar como coluna") ---- */
 
 .cm-report-designer__source-fields {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs, 4px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-xs, 6px);
   padding: var(--space-sm, 8px);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 8px);
-  background: var(--color-muted, #f3f4f6);
+  background: color-mix(in srgb, var(--color-muted, #f3f4f6) 60%, transparent);
 }
 
 .cm-report-designer__source-field {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-sm, 8px);
   padding: var(--space-xs, 4px) var(--space-sm, 8px);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-card, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--color-border, #d1d5db) 70%, transparent);
 }
 
 .cm-report-designer__source-field-label {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .cm-report-designer__source-field-added {
-  color: var(--color-muted-foreground, #6b7280);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  color: var(--color-success, #15803d);
   font-size: 0.75rem;
 }
 
@@ -325,9 +417,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm, 8px);
-  padding: var(--space-sm, 8px);
+  padding: var(--space-sm, 10px) var(--space-md, 14px);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 8px);
+  background: var(--color-card, #ffffff);
 }
 
 .cm-report-designer__group-title {
@@ -338,9 +431,9 @@
 
 .cm-report-designer__group-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: var(--space-md, 16px);
-  align-items: end;
+  align-items: center;
 }
 
 /* ---- rodapé: botões alinhados à direita ---- */
@@ -349,4 +442,69 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-sm, 8px);
+}
+
+/* ---- CmReportGlobalConfigEditor — branding (logo/empresa), página e margens ---- */
+
+.cm-report-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 16px);
+  color: var(--color-foreground, #111827);
+}
+
+.cm-report-config__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--space-md, 16px);
+  align-items: end;
+}
+
+.cm-report-config__section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs, 6px);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted-foreground, #6b7280);
+}
+
+.cm-report-config__logo-row {
+  display: flex;
+  align-items: end;
+  gap: var(--space-sm, 8px);
+}
+
+.cm-report-config__logo-url {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cm-report-config__logo-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-xs, 6px) var(--space-sm, 10px);
+  border: 1px dashed var(--color-border, #d1d5db);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-muted, #f3f4f6);
+}
+
+.cm-report-config__logo-image {
+  max-height: 40px;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+.cm-report-config__margins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: var(--space-sm, 8px);
+}
+
+.cm-report-config__file-input {
+  display: none;
 }

@@ -6,7 +6,7 @@
 // `header`/`style`) já mostre corretamente o que a definição de código configura — mas cada
 // edição grava só um patch raso em `view.header`, nunca a definição.
 import type { ReactElement } from "react";
-import { CmField, CmInput, CmSwitch } from "cosmemilton-ui/client";
+import { CmInput, CmSwitch } from "cosmemilton-ui/client";
 import { defaultReportHeader } from "../../core/defaults.js";
 import type { ReportGlobalConfig, ReportHeaderConfig, ReportView } from "../../core/types.js";
 import type { CmReportLayoutEditorLabels } from "./labels.js";
@@ -73,7 +73,8 @@ export function HeaderTab(props: HeaderTabProps): ReactElement {
 
       <div className="cm-report-editor__switch-list">
         {switches.map(({ field, label }) => (
-          <CmField key={field} label={label} className="cm-report-editor__switch-field">
+          <div key={field} className="cm-report-editor__switch-row">
+            <span className="cm-report-editor__switch-row-label">{label}</span>
             <CmSwitch
               aria-label={label}
               checked={headerField(field, layers)}
@@ -82,7 +83,7 @@ export function HeaderTab(props: HeaderTabProps): ReactElement {
               }
               disabled={disabled}
             />
-          </CmField>
+          </div>
         ))}
       </div>
     </div>
