@@ -1,0 +1,48 @@
+name: Release
+
+# Fluxo changesets: a cada push na main, a action abre/atualiza o PR "chore: version packages"
+# (bump de versão + CHANGELOG a partir dos arquivos .changeset/*.md). Quando esse PR é mergeado,
+# a mesma action publica no npm. Requer o secret NPM_TOKEN (token granular com permissão de
+# publish no pacote) e, em Settings → Actions → General, a opção
+# "Allow GitHub Actions to create and approve pull requests" habilitada.
+on:
+  push:
+    branches: [main]
+
+concurrency: release-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    name: Version packages / publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create release PR or publish to npm
+        uses: changesets/action@v1
+        with:
+          version: npm run changeset:version
+          publish: npm run changeset:publish
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
