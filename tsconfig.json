@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ES2020", "ES2022.Error"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    // Só para `examples/`: permite importar pelos specifiers reais publicados (`cosmemilton-report`,
+    // `cosmemilton-report/pdf` etc.) mesmo o pacote não estando em node_modules (é o próprio repo).
+    // `src/**` nunca importa esses specifiers, então isto não afeta o emit de `tsconfig.build.json`
+    // (que também não inclui `examples/`).
+    "baseUrl": ".",
+    "paths": {
+      "cosmemilton-report": ["./src/index.ts"],
+      "cosmemilton-report/pdf": ["./src/pdf.ts"],
+      "cosmemilton-report/xlsx": ["./src/xlsx.ts"],
+      "cosmemilton-report/client": ["./src/client.ts"],
+      "cosmemilton-report/next": ["./src/next.ts"]
+    }
+  },
+  "include": ["src", "examples"],
+  "exclude": ["node_modules", "dist"]
+}

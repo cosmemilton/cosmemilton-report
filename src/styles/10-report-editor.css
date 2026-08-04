@@ -1,0 +1,352 @@
+/* Estilos do CmReportLayoutEditor (Fase 8), do CmReportPdfPreview (Fase 9, classes
+ * `cm-report-preview__*` — o editor encaixa o preview dentro de `.cm-report-editor__preview`) e do
+ * CmReportDesigner (Fase 10, classes `cm-report-designer__*` ao final deste arquivo — reaproveita
+ * várias classes `cm-report-editor__*` para a lista de colunas). Classes BEM
+ * `cm-report-editor__*`/`cm-report-preview__*`/`cm-report-designer__*`, tokens do tema do
+ * cosmemilton-ui com fallbacks neutros (para quem usa o pacote sem o tema do cosmemilton-ui
+ * carregado). */
+
+.cm-report-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 16px);
+  color: var(--color-foreground, #111827);
+}
+
+.cm-report-editor__notice {
+  flex: 0 0 auto;
+}
+
+/* ---- layout 2 colunas: formulário | preview ---- */
+
+.cm-report-editor__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md, 16px);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .cm-report-editor__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* `showPreview: false` — sem coluna de preview, o formulário ocupa toda a largura. */
+.cm-report-editor--no-preview .cm-report-editor__body {
+  grid-template-columns: 1fr;
+}
+
+.cm-report-editor__form {
+  min-width: 0;
+}
+
+.cm-report-editor__preview {
+  min-width: 0;
+  position: sticky;
+  top: var(--space-md, 16px);
+}
+
+/* ---- aba Colunas ---- */
+
+.cm-report-editor__column-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm, 8px);
+}
+
+.cm-report-editor__column-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-sm, 8px);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-card, #ffffff);
+}
+
+.cm-report-editor__column-visibility-placeholder {
+  display: inline-block;
+  width: 36px;
+}
+
+.cm-report-editor__column-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-sm, 8px);
+}
+
+.cm-report-editor__column-field--width {
+  min-width: 0;
+}
+
+.cm-report-editor__column-actions {
+  display: flex;
+  gap: var(--space-xs, 4px);
+}
+
+/* ---- aba Cabeçalho ---- */
+
+.cm-report-editor__header-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md, 16px);
+}
+
+.cm-report-editor__switch-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs, 4px);
+  grid-column: 1 / -1;
+}
+
+.cm-report-editor__switch-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-xs, 4px) 0;
+}
+
+.cm-report-editor__switch-field .cm-field__header {
+  margin: 0;
+}
+
+/* ---- aba Sumário ---- */
+
+.cm-report-editor__summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm, 8px);
+}
+
+.cm-report-editor__summary-empty {
+  margin: 0;
+  color: var(--color-muted-foreground, #6b7280);
+  font-size: 0.875rem;
+}
+
+.cm-report-editor__summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) auto;
+  align-items: end;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-sm, 8px);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-card, #ffffff);
+}
+
+.cm-report-editor__summary-add {
+  align-self: flex-start;
+}
+
+/* ---- aba Estilo ---- */
+
+.cm-report-editor__style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md, 16px);
+  align-items: end;
+}
+
+.cm-report-editor__color-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs, 4px);
+}
+
+.cm-report-editor__color-label {
+  font-size: 0.875rem;
+  color: var(--color-muted-foreground, #6b7280);
+}
+
+.cm-report-editor__color-input {
+  inline-size: 48px;
+  block-size: 36px;
+  padding: 2px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--color-card, #ffffff);
+  cursor: pointer;
+}
+
+.cm-report-editor__color-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ---- CmReportPdfPreview (Fase 9) ---- */
+
+.cm-report-preview {
+  position: relative;
+  min-height: 320px;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-muted, #f3f4f6);
+  overflow: hidden;
+}
+
+.cm-report-preview__frame {
+  display: block;
+  width: 100%;
+  min-height: 480px;
+  border: 0;
+}
+
+.cm-report-preview__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg, 24px);
+  background: color-mix(in srgb, var(--color-card, #ffffff) 85%, transparent);
+  color: var(--color-muted-foreground, #6b7280);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.cm-report-preview__error {
+  padding: var(--space-lg, 24px);
+  color: var(--color-destructive, #b91c1c);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* ---- CmReportDesigner (Fase 10) — reaproveita as classes `cm-report-editor__column-*` acima
+ * para a lista de colunas (mesma UI visual da aba Colunas do editor) e `cm-report-editor__switch-
+ * field` para o switch de subtotal do agrupamento; classes próprias só para o que é exclusivo do
+ * designer: cabeçalho do form, lista de campos da fonte, agrupamento e rodapé. ---- */
+
+.cm-report-designer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 16px);
+  color: var(--color-foreground, #111827);
+}
+
+.cm-report-designer__notice {
+  flex: 0 0 auto;
+}
+
+/* ---- cabeçalho do form: nome, slug, fonte de dados ---- */
+
+.cm-report-designer__header {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md, 16px);
+}
+
+@media (max-width: 700px) {
+  .cm-report-designer__header {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- lista de campos da fonte selecionada ("Adicionar como coluna") ---- */
+
+.cm-report-designer__source-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs, 4px);
+  padding: var(--space-sm, 8px);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-muted, #f3f4f6);
+}
+
+.cm-report-designer__source-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-xs, 4px) var(--space-sm, 8px);
+}
+
+.cm-report-designer__source-field-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+
+.cm-report-designer__source-field-added {
+  color: var(--color-muted-foreground, #6b7280);
+  font-size: 0.75rem;
+}
+
+.cm-report-designer__source-empty {
+  border: 1px dashed var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+}
+
+/* ---- layout 2 colunas: formulário | preview (mesmo padrão do editor) ---- */
+
+.cm-report-designer__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md, 16px);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .cm-report-designer__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cm-report-designer__form {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md, 16px);
+}
+
+.cm-report-designer__preview {
+  min-width: 0;
+  position: sticky;
+  top: var(--space-md, 16px);
+}
+
+.cm-report-designer__empty {
+  border: 1px dashed var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+}
+
+.cm-report-designer__columns-empty {
+  margin: 0;
+  color: var(--color-muted-foreground, #6b7280);
+  font-size: 0.875rem;
+}
+
+/* ---- seção Agrupamento ---- */
+
+.cm-report-designer__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-sm, 8px);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--radius-md, 8px);
+}
+
+.cm-report-designer__group-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cm-report-designer__group-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md, 16px);
+  align-items: end;
+}
+
+/* ---- rodapé: botões alinhados à direita ---- */
+
+.cm-report-designer__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm, 8px);
+}
