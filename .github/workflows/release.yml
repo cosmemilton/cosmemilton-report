@@ -46,3 +46,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # setup-node (registry-url) gera um .npmrc com _authToken=${NODE_AUTH_TOKEN} que tem
+          # precedência sobre o .npmrc do changesets — sem esta linha o publish usa um token
+          # placeholder e falha com E404.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
