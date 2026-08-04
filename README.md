@@ -7,6 +7,12 @@ overrides por chamada).
 
 [![npm version](https://img.shields.io/npm/v/cosmemilton-report.svg)](https://www.npmjs.com/package/cosmemilton-report)
 [![CI](https://github.com/cosmemilton/cosmemilton-report/actions/workflows/ci.yml/badge.svg)](https://github.com/cosmemilton/cosmemilton-report/actions/workflows/ci.yml)
+[![docs](https://img.shields.io/badge/docs-miltonjunior.dev.br-blue)](https://miltonjunior.dev.br/cosmemilton-report)
+
+> 📖 **Documentação completa com exemplos ao vivo:**
+> [miltonjunior.dev.br/cosmemilton-report](https://miltonjunior.dev.br/cosmemilton-report) —
+> playground com seus próprios dados (JSON/CSV), demos interativas do editor e do designer,
+> guias de PDF/planilhas/Next.js e uma API de exemplo gerando relatórios reais.
 
 ## Instalação
 
