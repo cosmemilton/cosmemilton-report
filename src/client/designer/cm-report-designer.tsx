@@ -35,6 +35,7 @@ import {
   CmTabsList,
   CmTabsTrigger,
 } from "cosmemilton-ui/client";
+import { CmIcon } from "cosmemilton-ui/server";
 import { generatePlaceholderRows } from "../../core/placeholder.js";
 import { parseReportDefinition } from "../../core/parse.js";
 import type { ReportStorageAdapter } from "../../core/storage/adapter.js";
@@ -248,7 +249,14 @@ function DesignerColumnsTab(props: {
   return (
     <div className="cm-report-editor__column-list">
       {ordered.map((column, index) => (
-        <div key={column.key} className="cm-report-editor__column-row">
+        <div
+          key={column.key}
+          className={
+            (column.visible ?? true)
+              ? "cm-report-editor__column-row"
+              : "cm-report-editor__column-row cm-report-editor__column-row--hidden"
+          }
+        >
           {column.hideable !== false ? (
             <CmSwitch
               aria-label={`${labels.showColumn}: ${column.header}`}
@@ -261,13 +269,53 @@ function DesignerColumnsTab(props: {
             <span className="cm-report-editor__column-visibility-placeholder" aria-hidden="true" />
           )}
 
-          <div className="cm-report-editor__column-fields">
+          <div className="cm-report-editor__column-header-field">
             <ColumnHeaderField
               value={column.header}
               onChange={(patch) => patchColumn(column.key, patch)}
               disabled={disabled}
               labels={labels}
             />
+          </div>
+
+          <div className="cm-report-editor__column-actions">
+            <CmButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={<CmIcon name="lucide:chevron-up" size={16} />}
+              aria-label={labels.moveUp}
+              title={labels.moveUp}
+              onClick={() => move(index, -1)}
+              disabled={disabled || index === 0}
+            />
+            <CmButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={<CmIcon name="lucide:chevron-down" size={16} />}
+              aria-label={labels.moveDown}
+              title={labels.moveDown}
+              onClick={() => move(index, 1)}
+              disabled={disabled || index === ordered.length - 1}
+            />
+            <CmButton
+              type="button"
+              variant="ghost"
+              tone="danger"
+              size="sm"
+              iconOnly
+              icon={<CmIcon name="lucide:trash-2" size={16} />}
+              aria-label={labels.removeColumnButton}
+              title={labels.removeColumnButton}
+              onClick={() => remove(column.key)}
+              disabled={disabled}
+            />
+          </div>
+
+          <div className="cm-report-editor__column-details">
             <ColumnWidthField
               value={column.width}
               onChange={(patch) => patchColumn(column.key, patch)}
@@ -286,37 +334,6 @@ function DesignerColumnsTab(props: {
               disabled={disabled}
               labels={labels}
             />
-          </div>
-
-          <div className="cm-report-editor__column-actions">
-            <CmButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => move(index, -1)}
-              disabled={disabled || index === 0}
-            >
-              {labels.moveUp}
-            </CmButton>
-            <CmButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => move(index, 1)}
-              disabled={disabled || index === ordered.length - 1}
-            >
-              {labels.moveDown}
-            </CmButton>
-            <CmButton
-              type="button"
-              variant="ghost"
-              tone="danger"
-              size="sm"
-              onClick={() => remove(column.key)}
-              disabled={disabled}
-            >
-              {labels.removeColumnButton}
-            </CmButton>
           </div>
         </div>
       ))}

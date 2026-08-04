@@ -7,7 +7,7 @@
 // quando não há coluna de agrupamento escolhida — não faz sentido configurar o subtotal de um
 // agrupamento inexistente.
 import type { ReactElement } from "react";
-import { CmField, CmSelect, CmSwitch } from "cosmemilton-ui/client";
+import { CmSelect, CmSwitch } from "cosmemilton-ui/client";
 import type { SerializableReportColumn, SerializableReportDefinition } from "../../core/types.js";
 import type { CmReportDesignerLabels } from "./labels.js";
 
@@ -55,14 +55,17 @@ export function GroupSection(props: GroupSectionProps): ReactElement {
           options={options}
           disabled={disabled}
         />
-        <CmField label={labels.groupShowSubtotal} className="cm-report-editor__switch-field">
-          <CmSwitch
-            aria-label={labels.groupShowSubtotal}
-            checked={group?.showSubtotal ?? true}
-            onCheckedChange={handleSubtotalChange}
-            disabled={disabled || !group}
-          />
-        </CmField>
+        <div className="cm-report-editor__switch-list">
+          <div className="cm-report-editor__switch-row">
+            <span className="cm-report-editor__switch-row-label">{labels.groupShowSubtotal}</span>
+            <CmSwitch
+              aria-label={labels.groupShowSubtotal}
+              checked={group?.showSubtotal ?? true}
+              onCheckedChange={handleSubtotalChange}
+              disabled={disabled || !group}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

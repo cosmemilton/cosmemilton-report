@@ -6,6 +6,7 @@
 // summary da definição (ver `resolveReport`/plano, decisão de arquitetura).
 import type { ReactElement } from "react";
 import { CmButton, CmInput, CmSelect } from "cosmemilton-ui/client";
+import { CmIcon } from "cosmemilton-ui/server";
 import type { ReportSummaryItem, ReportSummaryOperation, ReportView } from "../../core/types.js";
 import type { CmReportLayoutEditorLabels } from "./labels.js";
 
@@ -118,51 +119,63 @@ export function SummaryTab(props: SummaryTabProps): ReactElement {
         // Itens de sumário não têm id próprio; a lista só muda por add/remove/substituição
         // inteira (nunca reordenação in-place), então a key por índice é estável o bastante.
         <div key={index} className="cm-report-editor__summary-row">
-          <CmInput
-            label={labels.summaryLabelField}
-            placeholder={labels.summaryLabelPlaceholder}
-            value={item.label}
-            onChange={(event) => updateItem(index, { label: event.target.value })}
-            disabled={disabled}
-          />
-          <CmSelect
-            label={labels.summarySourceColumn}
-            value={item.sourceColumn}
-            onChange={(value) => updateItem(index, { sourceColumn: value })}
-            options={sourceOptions}
-            disabled={disabled}
-          />
-          <CmSelect
-            label={labels.summaryOperation}
-            value={item.operation}
-            onChange={(value) => updateItem(index, { operation: value as ReportSummaryOperation })}
-            options={operationOptions}
-            disabled={disabled}
-          />
-          <CmSelect
-            label={labels.summaryFormat}
-            value={item.format ?? "number"}
-            onChange={(value) =>
-              updateItem(index, { format: value as ReportSummaryItem["format"] })
-            }
-            options={formatOptions}
-            disabled={disabled}
-          />
-          <CmButton
-            type="button"
-            variant="ghost"
-            tone="danger"
-            onClick={() => removeItem(index)}
-            disabled={disabled}
-          >
-            {labels.summaryRemoveItem}
-          </CmButton>
+          <div className="cm-report-editor__summary-label-field">
+            <CmInput
+              label={labels.summaryLabelField}
+              placeholder={labels.summaryLabelPlaceholder}
+              value={item.label}
+              onChange={(event) => updateItem(index, { label: event.target.value })}
+              disabled={disabled}
+            />
+          </div>
+          <div className="cm-report-editor__summary-remove">
+            <CmButton
+              type="button"
+              variant="ghost"
+              tone="danger"
+              size="sm"
+              iconOnly
+              icon={<CmIcon name="lucide:trash-2" size={16} />}
+              aria-label={labels.summaryRemoveItem}
+              title={labels.summaryRemoveItem}
+              onClick={() => removeItem(index)}
+              disabled={disabled}
+            />
+          </div>
+          <div className="cm-report-editor__summary-details">
+            <CmSelect
+              label={labels.summarySourceColumn}
+              value={item.sourceColumn}
+              onChange={(value) => updateItem(index, { sourceColumn: value })}
+              options={sourceOptions}
+              disabled={disabled}
+            />
+            <CmSelect
+              label={labels.summaryOperation}
+              value={item.operation}
+              onChange={(value) =>
+                updateItem(index, { operation: value as ReportSummaryOperation })
+              }
+              options={operationOptions}
+              disabled={disabled}
+            />
+            <CmSelect
+              label={labels.summaryFormat}
+              value={item.format ?? "number"}
+              onChange={(value) =>
+                updateItem(index, { format: value as ReportSummaryItem["format"] })
+              }
+              options={formatOptions}
+              disabled={disabled}
+            />
+          </div>
         </div>
       ))}
 
       <CmButton
         type="button"
         variant="outline"
+        icon={<CmIcon name="lucide:plus" size={16} />}
         onClick={addItem}
         disabled={disabled}
         className="cm-report-editor__summary-add"

@@ -15,6 +15,15 @@ export type {
 } from "./client/use-report-definitions.js";
 export { useReportDefinitions } from "./client/use-report-definitions.js";
 
+export type {
+  CmReportGlobalConfigEditorLabels,
+  CmReportGlobalConfigEditorProps,
+} from "./client/global-config-editor.js";
+export {
+  CmReportGlobalConfigEditor,
+  defaultReportGlobalConfigEditorLabels,
+} from "./client/global-config-editor.js";
+
 export type { CmReportLayoutEditorProps } from "./client/editor/cm-report-layout-editor.js";
 export { CmReportLayoutEditor } from "./client/editor/cm-report-layout-editor.js";
 export type { CmReportLayoutEditorLabels } from "./client/editor/labels.js";

@@ -5,7 +5,7 @@
 // ver `HeaderTab`); cada edição grava um patch raso em `view.style`. `accentColor` usa
 // `<input type="color">` nativo — o cosmemilton-ui não tem um color picker.
 import type { ReactElement } from "react";
-import { CmField, CmInput, CmSelect, CmSwitch } from "cosmemilton-ui/client";
+import { CmInput, CmSelect, CmSwitch } from "cosmemilton-ui/client";
 import { defaultReportStyle } from "../../core/defaults.js";
 import type { ReportGlobalConfig, ReportStyleConfig, ReportView } from "../../core/types.js";
 import type { CmReportLayoutEditorLabels } from "./labels.js";
@@ -77,23 +77,26 @@ export function StyleTab(props: StyleTabProps): ReactElement {
         disabled={disabled}
       />
 
-      <CmField label={labels.styleZebraStripes} className="cm-report-editor__switch-field">
-        <CmSwitch
-          aria-label={labels.styleZebraStripes}
-          checked={zebraStripes}
-          onCheckedChange={(checked) => patchStyle({ zebraStripes: checked })}
-          disabled={disabled}
-        />
-      </CmField>
-
-      <CmField label={labels.styleShowGridLines} className="cm-report-editor__switch-field">
-        <CmSwitch
-          aria-label={labels.styleShowGridLines}
-          checked={showGridLines}
-          onCheckedChange={(checked) => patchStyle({ showGridLines: checked })}
-          disabled={disabled}
-        />
-      </CmField>
+      <div className="cm-report-editor__switch-list">
+        <div className="cm-report-editor__switch-row">
+          <span className="cm-report-editor__switch-row-label">{labels.styleZebraStripes}</span>
+          <CmSwitch
+            aria-label={labels.styleZebraStripes}
+            checked={zebraStripes}
+            onCheckedChange={(checked) => patchStyle({ zebraStripes: checked })}
+            disabled={disabled}
+          />
+        </div>
+        <div className="cm-report-editor__switch-row">
+          <span className="cm-report-editor__switch-row-label">{labels.styleShowGridLines}</span>
+          <CmSwitch
+            aria-label={labels.styleShowGridLines}
+            checked={showGridLines}
+            onCheckedChange={(checked) => patchStyle({ showGridLines: checked })}
+            disabled={disabled}
+          />
+        </div>
+      </div>
 
       <CmSelect
         label={labels.styleDensity}
@@ -105,13 +108,16 @@ export function StyleTab(props: StyleTabProps): ReactElement {
 
       <label className="cm-report-editor__color-field">
         <span className="cm-report-editor__color-label">{labels.styleAccentColor}</span>
-        <input
-          type="color"
-          className="cm-report-editor__color-input"
-          value={accentColor}
-          onChange={(event) => patchStyle({ accentColor: event.target.value })}
-          disabled={disabled}
-        />
+        <span className="cm-report-editor__color-control">
+          <input
+            type="color"
+            className="cm-report-editor__color-input"
+            value={accentColor}
+            onChange={(event) => patchStyle({ accentColor: event.target.value })}
+            disabled={disabled}
+          />
+          <span className="cm-report-editor__color-value">{accentColor}</span>
+        </span>
       </label>
     </div>
   );

@@ -3,11 +3,11 @@
 // DataSourceStep — seção "Dados" do designer: lista os `fields` da fonte de dados JÁ
 // SELECIONADA (o `CmSelect` que escolhe a fonte fica no cabeçalho do form, em
 // `cm-report-designer.tsx`, junto de nome/slug — ver o comentário lá para o porquê dessa divisão)
-// com um botão "Adicionar como coluna" por campo. O botão fica desabilitado quando a `key` do
-// campo já é uma coluna do rascunho — mas mantém o rótulo "Adicionar como coluna" sempre (o aviso
-// "Coluna já adicionada" aparece como texto auxiliar ao lado, não substitui o rótulo do botão).
+// como chips compactos: nome do campo à esquerda; à direita, um botão de ícone "+" para adicionar
+// como coluna, que vira um check + "Coluna já adicionada" quando a `key` já está no rascunho.
 import type { ReactElement } from "react";
 import { CmButton, CmEmpty } from "cosmemilton-ui/client";
+import { CmIcon } from "cosmemilton-ui/server";
 import type {
   ReportDataSource,
   ReportDataSourceField,
@@ -50,18 +50,21 @@ export function DataSourceStep(props: DataSourceStepProps): ReactElement {
             <span className="cm-report-designer__source-field-label">{field.label}</span>
             {alreadyAdded ? (
               <span className="cm-report-designer__source-field-added">
-                {labels.columnAlreadyAdded}
+                <CmIcon name="lucide:check" size={14} /> {labels.columnAlreadyAdded}
               </span>
-            ) : null}
-            <CmButton
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onAddColumn(field)}
-              disabled={disabled || alreadyAdded}
-            >
-              {labels.addAsColumnButton}
-            </CmButton>
+            ) : (
+              <CmButton
+                type="button"
+                variant="outline"
+                size="sm"
+                iconOnly
+                icon={<CmIcon name="lucide:plus" size={16} />}
+                aria-label={`${labels.addAsColumnButton}: ${field.label}`}
+                title={labels.addAsColumnButton}
+                onClick={() => onAddColumn(field)}
+                disabled={disabled}
+              />
+            )}
           </div>
         );
       })}

@@ -6,6 +6,7 @@
 // serializáveis (`ReportViewColumn[]`) — nunca a coluna inteira da definição.
 import type { ReactElement } from "react";
 import { CmButton, CmSwitch } from "cosmemilton-ui/client";
+import { CmIcon } from "cosmemilton-ui/server";
 import { resolveColumns } from "../../core/columns.js";
 import type { ReportDefinition, ReportView, ReportViewColumn } from "../../core/types.js";
 import {
@@ -85,7 +86,14 @@ export function ColumnsTab<T>(props: ColumnsTabProps<T>): ReactElement {
   return (
     <div className="cm-report-editor__column-list">
       {columns.map((column, index) => (
-        <div key={column.key} className="cm-report-editor__column-row">
+        <div
+          key={column.key}
+          className={
+            column.visible
+              ? "cm-report-editor__column-row"
+              : "cm-report-editor__column-row cm-report-editor__column-row--hidden"
+          }
+        >
           {column.hideable ? (
             <CmSwitch
               aria-label={`${labels.showColumn}: ${column.header}`}
@@ -98,13 +106,41 @@ export function ColumnsTab<T>(props: ColumnsTabProps<T>): ReactElement {
             <span className="cm-report-editor__column-visibility-placeholder" aria-hidden="true" />
           )}
 
-          <div className="cm-report-editor__column-fields">
+          <div className="cm-report-editor__column-header-field">
             <ColumnHeaderField
               value={column.header}
               onChange={(patch) => patchColumn(column.key, patch)}
               disabled={disabled}
               labels={labels}
             />
+          </div>
+
+          <div className="cm-report-editor__column-actions">
+            <CmButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={<CmIcon name="lucide:chevron-up" size={16} />}
+              aria-label={labels.moveUp}
+              title={labels.moveUp}
+              onClick={() => move(index, -1)}
+              disabled={disabled || index === 0}
+            />
+            <CmButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={<CmIcon name="lucide:chevron-down" size={16} />}
+              aria-label={labels.moveDown}
+              title={labels.moveDown}
+              onClick={() => move(index, 1)}
+              disabled={disabled || index === columns.length - 1}
+            />
+          </div>
+
+          <div className="cm-report-editor__column-details">
             <ColumnWidthField
               value={widthOverride(column.widthPct)}
               onChange={(patch) => patchColumn(column.key, patch)}
@@ -123,27 +159,6 @@ export function ColumnsTab<T>(props: ColumnsTabProps<T>): ReactElement {
               disabled={disabled}
               labels={labels}
             />
-          </div>
-
-          <div className="cm-report-editor__column-actions">
-            <CmButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => move(index, -1)}
-              disabled={disabled || index === 0}
-            >
-              {labels.moveUp}
-            </CmButton>
-            <CmButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => move(index, 1)}
-              disabled={disabled || index === columns.length - 1}
-            >
-              {labels.moveDown}
-            </CmButton>
           </div>
         </div>
       ))}
