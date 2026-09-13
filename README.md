@@ -44,6 +44,31 @@ npm i exceljs
 npm i cosmemilton-ui @iconify/react
 ```
 
+Os editores `CmReportLayoutEditor`, `CmReportDesigner` e `CmReportGlobalConfigEditor` precisam
+de um **`CmToastProvider` ancestral**, de `cosmemilton-ui/client`. Use o provider já existente
+no app ou adicione um acima da tela. Ele exibe validações, confirmações de salvar/duplicar,
+falhas de preview e feedback do upload do logotipo:
+
+```tsx
+"use client";
+
+import { CmToastProvider } from "cosmemilton-ui/client";
+import { CmReportGlobalConfigEditor } from "cosmemilton-report/client";
+import "cosmemilton-ui/styles.css";
+import "cosmemilton-report/styles.css";
+
+<CmToastProvider>
+  <CmReportGlobalConfigEditor
+    value={config}
+    onChange={(patch) => setConfig((current) => ({ ...current, ...patch }))}
+  />
+</CmToastProvider>;
+```
+
+O aviso de view somente leitura e o botão **Duplicar para editar** continuam visíveis no
+formulário. `onDuplicate` aceita uma Promise para aguardar a operação e mostrar seu resultado.
+O preview usado isoladamente mantém seu callback `onError` e dispensa o provider.
+
 ## Quickstart
 
 **1. Defina o relatório** ([`examples/01-minimo.ts`](./examples/01-minimo.ts)):
@@ -137,6 +162,11 @@ para Next.js porque:
 **Use client-side quando:** for um preview ao vivo (editor/designer, via `CmReportPdfPreview`) ou
 um export leve que não precisa ida-e-volta ao servidor (CSV/TSV/JSON pequenos, com
 `useReportExport` sem `endpoint`).
+
+O hook também gera PDF no navegador, quando necessário: sem `endpoint`, usa
+`pdf(document).toBlob()` do `@react-pdf/renderer`. `renderReportToBuffer` e
+`renderReportToStream` continuam exclusivos do servidor. Para relatórios grandes, prefira o
+endpoint para não carregar o renderizador nem processar todas as linhas no navegador.
 
 **Alternativa documentada: server action com base64.** Funciona, mas herda os limites de payload
 de server actions — prefira para arquivos pequenos:
@@ -401,6 +431,41 @@ Toda leitura de storage passa por parsers defensivos (`parseReportGlobalConfig`,
 vez de lançar — útil tanto para JSON corrompido em localStorage quanto para dado inconsistente
 vindo do banco.
 
+## Papel e cabeçalhos no PDF
+
+Os cabeçalhos das colunas se repetem nas páginas em que a tabela continua, abaixo do cabeçalho
+do relatório e sem sobrepor as linhas. Agrupamentos, subtotais e seções personalizadas são
+preservados; páginas dedicadas a seções fora da tabela não recebem cabeçalhos de coluna.
+
+`paperSize` aceita `"A4"`, `"Letter"`, `"58mm"` e `"80mm"`, tanto em `globalConfig` quanto em
+`overrides`. O editor de configuração global também oferece essas opções.
+
+Para PDV, os formatos `"58mm"` e `"80mm"` geram **uma bobina contínua**, com largura física
+fixa e altura calculada pelo conteúdo. Usam retrato, inclusive se a configuração herdada pedir
+paisagem. As margens padrão são 3 mm em cada lado; margens informadas explicitamente continuam
+valendo. O cabeçalho se organiza verticalmente e o rodapé aparece após os totais.
+
+```ts
+import { renderReportToBuffer } from "cosmemilton-report/pdf";
+
+const cupom = await renderReportToBuffer({
+  definition: relatorioVendas,
+  rows,
+  globalConfig: {
+    paperSize: "80mm", // ou "58mm"
+    companyName: "Minha Loja",
+    footerText: "Obrigado pela compra!",
+  },
+  overrides: {
+    header: { showPageNumbers: false },
+    style: { fontSize: 8, headerFontSize: 8, density: "compact" },
+  },
+});
+```
+
+Para cupons estreitos, escolha poucas colunas e rótulos curtos. A largura do PDF é a largura
+nominal do papel; ajuste as margens à área imprimível da sua impressora.
+
 ## Fontes no PDF
 
 Por padrão o PDF usa Helvetica (fonte embutida do PDF, sem acentuação latina completa em todo
@@ -456,9 +521,25 @@ const csvInternacional = exportReportToCsv(
 );
 ```
 
+**Proteção de fórmulas em planilhas:** CSV e TSV prefixam com apóstrofo os textos e cabeçalhos
+que começam com `=`, `+`, `-` ou `@`, inclusive após espaços, tabs ou quebras de linha. Assim,
+um nome cadastrado como `=1+1` é exportado como dado textual. Valores brutos do tipo `number`
+continuam numéricos, inclusive negativos; o escape de aspas/delimitadores e o BOM do CSV são
+preservados. A mesma proteção vale para TSV copiado por `copyToClipboard`.
+
+Para uma integração que exige textos literais e não abre o arquivo em uma planilha, é possível
+desativar a proteção explicitamente em `CsvOptions`/`TsvOptions`:
+
+```ts
+exportReportToCsv({ definition: relatorioVendas, rows }, { escapeFormulas: false });
+exportReportToTsv({ definition: relatorioVendas, rows }, { escapeFormulas: false });
+// A opção também existe em datasetToCsv(dataset, options) e datasetToTsv(dataset, options).
+```
+
+Ao desativá-la, o consumidor passa a ser responsável pela interpretação desses textos.
+
 ## Limitações v1
 
-- O cabeçalho da tabela **não se repete** em cada página do PDF (só na primeira).
 - Sem drag-and-drop no editor/designer — reordenar colunas usa botões subir/descer.
 - Definições salvas pelo designer são **só declarativas**: sem `pdfRender` por coluna nem
   `sections` customizadas (`SerializableReportColumn`/`SerializableReportDefinition` não têm

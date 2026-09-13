@@ -92,6 +92,8 @@ function HeaderRow<T>({
 }): ReactElement {
   return (
     <View
+      fixed
+      wrap={false}
       style={{
         flexDirection: "row",
         borderBottomWidth: showGridLines ? 0 : 1,
@@ -236,13 +238,9 @@ export function ReportPdfTable<T>({
 
   return (
     <View>
-      {/* Cabeçalho de colunas: de propósito NÃO marcado como `fixed`. No react-pdf, `fixed`
-          reancora o elemento no topo absoluto de CADA página (acima até do cabeçalho de
-          branding do documento, que já é `fixed`), então marcar o header da tabela como `fixed`
-          o empilharia por cima do cabeçalho do relatório em vez de repeti-lo logo acima da
-          tabela. Repetir corretamente exigiria unificar os dois `fixed` num único bloco por
-          página — fora do escopo do v1. Aceite: o header de colunas aparece só uma vez, no
-          início da tabela (primeira página). */}
+      {/* `fixed` permanece no fluxo da tabela e é copiado quando ela continua em outra
+          página. Sem posicionamento absoluto, a moldura do relatório reserva seu espaço
+          acima dele; sections fora da tabela não recebem cabeçalhos de coluna. */}
       <HeaderRow columns={columns} style={style} padding={padding} showGridLines={showGridLines} />
 
       {groups

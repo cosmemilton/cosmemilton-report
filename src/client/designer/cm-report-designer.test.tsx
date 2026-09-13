@@ -4,9 +4,18 @@
 // fica fora do `include` do tsconfig — sem este import aqui, `tsc --noEmit` não vê a augmentação
 // de tipos de `Assertion` (ver `cm-report-layout-editor.test.tsx`, mesmo padrão).
 import "@testing-library/jest-dom/vitest";
+import { useState, type ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  render as renderComponent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
+import { CmToastProvider } from "cosmemilton-ui/client";
 import { parseReportDefinition } from "../../core/parse.js";
 import { createMemoryReportAdapter } from "../../core/storage/memory-adapter.js";
 import type { ReportDataSource, SerializableReportDefinition } from "../../core/types.js";
@@ -25,6 +34,10 @@ vi.mock("../preview/cm-report-pdf-preview.js", () => ({
 }));
 
 afterEach(cleanup);
+
+function render(ui: ReactElement) {
+  return renderComponent(ui, { wrapper: CmToastProvider });
+}
 
 const dataSources: ReportDataSource[] = [
   {
@@ -105,6 +118,9 @@ describe("CmReportDesigner", () => {
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
     expect(onSaved.mock.calls[0][0]).toEqual(parseReportDefinition(saved));
+    expect(screen.getByText("Relatório salvo com sucesso.").closest("[role=alert]")).toHaveClass(
+      "cm-toast__item--success",
+    );
   });
 
   it("salvar sem nome mostra 'Informe o nome do relatório' e não chama o adapter", async () => {
@@ -120,6 +136,7 @@ describe("CmReportDesigner", () => {
     await user.click(screen.getByRole("button", { name: "Salvar relatório" }));
 
     expect(screen.getByText("Informe o nome do relatório")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveClass("cm-toast__item--warning");
     expect(saveSpy).not.toHaveBeenCalled();
   });
 
@@ -275,5 +292,121 @@ describe("CmReportDesigner", () => {
       const lastCall = h.previewSpy.mock.calls.at(-1)?.[0] as CmReportPdfPreviewProps<unknown>;
       expect(lastCall.rows).toBe(sampleRows);
     });
+  });
+
+  it("usa o provider do app e mantém a confirmação quando onSaved fecha o designer", async () => {
+    const user = userEvent.setup();
+    const adapter = createMemoryReportAdapter();
+    function Page() {
+      const [open, setOpen] = useState(true);
+      return (
+        <CmToastProvider position="top-left">
+          {open ? (
+            <CmReportDesigner
+              dataSources={dataSources}
+              adapter={adapter}
+              definition={{
+                slug: "vendas",
+                name: "Vendas",
+                columns: [{ key: "cliente", header: "Cliente" }],
+              }}
+              onSaved={() => setOpen(false)}
+            />
+          ) : (
+            <p>Lista de relatórios</p>
+          )}
+        </CmToastProvider>
+      );
+    }
+    renderComponent(<Page />);
+
+    await user.click(screen.getByRole("button", { name: "Salvar relatório" }));
+
+    expect(screen.getByText("Lista de relatórios")).toBeInTheDocument();
+    expect(
+      screen.getByText("Relatório salvo com sucesso.").closest(".cm-toast__viewport"),
+    ).toHaveAttribute("data-position", "top-left");
+    expect(document.querySelectorAll(".cm-toast__viewport")).toHaveLength(1);
+  });
+
+  it.each([new Error("Quota excedida"), "falha desconhecida"])(
+    "mostra falha de persistência via toast e não chama onSaved (%s)",
+    async (failure) => {
+      const user = userEvent.setup();
+      const adapter = createMemoryReportAdapter();
+      vi.spyOn(adapter, "saveDefinition").mockRejectedValue(failure);
+      const onSaved = vi.fn();
+      render(
+        <CmReportDesigner
+          dataSources={dataSources}
+          adapter={adapter}
+          definition={{
+            slug: "vendas",
+            name: "Vendas",
+            columns: [{ key: "cliente", header: "Cliente" }],
+          }}
+          onSaved={onSaved}
+        />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "Salvar relatório" }));
+
+      expect(screen.getByRole("alert")).toHaveClass("cm-toast__item--danger");
+      expect(
+        screen.getByText(
+          failure instanceof Error ? failure.message : "Falha ao salvar o relatório.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Relatório salvo com sucesso.")).toBeNull();
+      expect(onSaved).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "Salvar relatório" })).toBeEnabled();
+    },
+  );
+
+  it("avisa quando a amostra falha e identifica que o preview usa dados de exemplo", async () => {
+    const adapter = createMemoryReportAdapter();
+    const getPreviewRows = vi.fn().mockRejectedValue(new Error("Offline"));
+    render(
+      <CmReportDesigner
+        dataSources={dataSources}
+        adapter={adapter}
+        definition={{
+          slug: "vendas",
+          name: "Vendas",
+          dataSource: "vendas",
+          columns: [{ key: "cliente", header: "Cliente" }],
+        }}
+        getPreviewRows={getPreviewRows}
+      />,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível carregar a amostra. A pré-visualização usa dados de exemplo.",
+    );
+    expect(screen.getByRole("alert")).toHaveClass("cm-toast__item--warning");
+    const props = h.previewSpy.mock.calls.at(-1)?.[0] as CmReportPdfPreviewProps<unknown>;
+    expect(props.rows).toHaveLength(20);
+    expect(getPreviewRows).toHaveBeenCalledTimes(1);
+  });
+
+  it("notifica falha do PDF sem mudar as entradas que agendam a geração", () => {
+    render(<CmReportDesigner dataSources={dataSources} adapter={createMemoryReportAdapter()} />);
+    const before = h.previewSpy.mock.calls.at(-1)?.[0] as CmReportPdfPreviewProps<unknown>;
+
+    act(() => before.onError?.(new Error("Imagem inválida")));
+
+    expect(screen.getByRole("alert")).toHaveClass("cm-toast__item--danger");
+    expect(screen.getByRole("alert")).toHaveTextContent("Imagem inválida");
+    const after = h.previewSpy.mock.calls.at(-1)?.[0] as CmReportPdfPreviewProps<unknown>;
+    expect(after.rows).toBe(before.rows);
+    expect(after.definition).toBe(before.definition);
+  });
+
+  it("exige provider explícito em vez de descartar as notificações", () => {
+    expect(() =>
+      renderComponent(
+        <CmReportDesigner dataSources={dataSources} adapter={createMemoryReportAdapter()} />,
+      ),
+    ).toThrow("useCmToast must be used within <CmToastProvider>");
   });
 });

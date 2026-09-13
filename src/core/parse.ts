@@ -2,7 +2,12 @@
 // resposta de API) e não é confiável. Cada função aqui aceita `unknown`, valida campo a campo
 // (Sets de literais, coerção por `typeof`) e nunca lança — valor inválido cai silenciosamente
 // no default ou é descartado, dependendo do campo.
-import { defaultReportGlobalConfig, defaultReportHeader, defaultReportStyle } from "./defaults.js";
+import {
+  defaultReportGlobalConfig,
+  defaultReportHeader,
+  defaultReportStyle,
+  getReportPageDefaults,
+} from "./defaults.js";
 import type {
   ReportColumnAlign,
   ReportFormat,
@@ -39,7 +44,7 @@ function isWidthString(value: unknown): value is `${number}%` {
 
 // ---------- Sets de valores válidos por campo ----------
 
-const PAPER_SIZES = new Set<ReportPaperSize>(["A4", "Letter"]);
+const PAPER_SIZES = new Set<ReportPaperSize>(["A4", "Letter", "58mm", "80mm"]);
 const ORIENTATIONS = new Set<ReportOrientation>(["portrait", "landscape"]);
 const DENSITIES = new Set<NonNullable<ReportStyleConfig["density"]>>([
   "compact",
@@ -132,9 +137,12 @@ export function parseReportGlobalConfig(raw: unknown): ReportGlobalConfig {
   result.paperSize = PAPER_SIZES.has(raw.paperSize as ReportPaperSize)
     ? (raw.paperSize as ReportPaperSize)
     : base.paperSize;
-  result.orientation = ORIENTATIONS.has(raw.orientation as ReportOrientation)
-    ? (raw.orientation as ReportOrientation)
-    : base.orientation;
+  Object.assign(result, getReportPageDefaults(result.paperSize));
+  const thermal = result.paperSize === "58mm" || result.paperSize === "80mm";
+  result.orientation =
+    !thermal && ORIENTATIONS.has(raw.orientation as ReportOrientation)
+      ? (raw.orientation as ReportOrientation)
+      : base.orientation;
 
   if (isFiniteNumber(raw.marginTopMm) && raw.marginTopMm >= 0) result.marginTopMm = raw.marginTopMm;
   if (isFiniteNumber(raw.marginBottomMm) && raw.marginBottomMm >= 0) {

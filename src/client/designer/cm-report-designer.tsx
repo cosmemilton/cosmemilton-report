@@ -22,9 +22,8 @@
 // header/width/align/format usados lá) e monta sua própria lista, com um botão "Remover coluna"
 // que a aba do editor não tem (lá colunas somem/aparecem por `visible`, nunca são removidas da
 // definição).
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import {
-  CmAlert,
   CmButton,
   CmEmpty,
   CmInput,
@@ -34,6 +33,7 @@ import {
   CmTabsContent,
   CmTabsList,
   CmTabsTrigger,
+  useCmToast,
 } from "cosmemilton-ui/client";
 import { CmIcon } from "cosmemilton-ui/server";
 import { generatePlaceholderRows } from "../../core/placeholder.js";
@@ -343,6 +343,7 @@ function DesignerColumnsTab(props: {
 
 // ---------- componente principal ----------
 
+/** Requer `CmToastProvider` de `cosmemilton-ui/client` acima do designer. */
 export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
   const {
     dataSources,
@@ -355,6 +356,7 @@ export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
     className,
     labels,
   } = props;
+  const { toast } = useCmToast();
 
   const isEditMode = definition !== undefined;
   const mergedLabels: CmReportDesignerLabels = { ...defaultReportDesignerLabels, ...labels };
@@ -362,8 +364,6 @@ export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
   const [draft, setDraft] = useState<SerializableReportDefinition>(() =>
     definition ? cloneDefinition(definition) : emptyDraft(),
   );
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   // Uma vez que o usuário edite o slug manualmente (só possível em modo criação — em modo edição
   // o campo é `disabled`), o auto-slug a partir do nome para de sobrescrever o que foi digitado.
@@ -381,20 +381,22 @@ export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
       return;
     }
 
-    getPreviewRows(selectedDataSource)
+    Promise.resolve()
+      .then(() => getPreviewRows(selectedDataSource))
       .then((rows) => {
         if (!cancelled) setFetchedRows(rows);
       })
       .catch(() => {
-        // Erro silencioso — sem linhas reais, o preview cai no fallback de
-        // `generatePlaceholderRows` computado abaixo.
-        if (!cancelled) setFetchedRows(null);
+        if (!cancelled) {
+          setFetchedRows(null);
+          toast(mergedLabels.previewRowsError, { tone: "warning" });
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [selectedDataSource, getPreviewRows]);
+  }, [selectedDataSource, getPreviewRows, toast, mergedLabels.previewRowsError]);
 
   function patchDraft(patch: Partial<SerializableReportDefinition>): void {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -449,59 +451,52 @@ export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
   }
 
   async function handleSave(): Promise<void> {
-    setSaveError(null);
+    if (isSaving) return;
 
     if (!draft.name.trim()) {
-      setValidationError(mergedLabels.validationNameRequired);
+      toast(mergedLabels.validationNameRequired, { tone: "warning" });
       return;
     }
     if (draft.columns.length === 0) {
-      setValidationError(mergedLabels.validationColumnsRequired);
+      toast(mergedLabels.validationColumnsRequired, { tone: "warning" });
       return;
     }
 
     const parsed = parseReportDefinition(draft);
     if (!parsed) {
-      setValidationError(mergedLabels.validationInvalidDefinition);
+      toast(mergedLabels.validationInvalidDefinition, { tone: "warning" });
       return;
     }
-    setValidationError(null);
 
     setIsSaving(true);
     try {
       await adapter.saveDefinition(parsed);
-      onSaved?.(parsed);
     } catch (err) {
       const message = err instanceof Error ? err.message : mergedLabels.saveErrorFallback;
-      setSaveError(message);
+      toast(message, { tone: "danger", title: mergedLabels.saveErrorTitle });
+      return;
     } finally {
       setIsSaving(false);
     }
+    toast(mergedLabels.saveSuccess, { tone: "success" });
+    onSaved?.(parsed);
   }
 
   const tabsDisabled = !draft.dataSource && draft.columns.length === 0;
   const dataSourceOptions = dataSources.map((source) => ({ value: source.id, label: source.name }));
 
-  const placeholderRows = generatePlaceholderRows(
-    draft.columns.map((column) => ({ key: column.key, format: column.format })),
-    20,
+  const placeholderRows = useMemo(
+    () =>
+      generatePlaceholderRows(
+        draft.columns.map((column) => ({ key: column.key, format: column.format })),
+        20,
+      ),
+    [draft.columns],
   );
   const previewRows = fetchedRows ?? placeholderRows;
 
   return (
     <div className={joinClassNames("cm-report-designer", className)}>
-      {saveError ? (
-        <CmAlert
-          tone="danger"
-          title={mergedLabels.saveErrorTitle}
-          description={saveError}
-          className="cm-report-designer__notice"
-        />
-      ) : null}
-      {validationError ? (
-        <CmAlert tone="warning" title={validationError} className="cm-report-designer__notice" />
-      ) : null}
-
       <div className="cm-report-designer__header">
         <CmInput
           label={mergedLabels.reportNameLabel}
@@ -616,6 +611,9 @@ export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
             definition={draft as ReportDefinition<Record<string, unknown>>}
             rows={previewRows}
             globalConfig={globalConfig}
+            onError={(error) =>
+              toast(error.message, { tone: "danger", title: mergedLabels.previewErrorTitle })
+            }
           />
         </div>
       </div>

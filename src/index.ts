@@ -53,6 +53,7 @@ export { buildReportDataset } from "./core/dataset.js";
 export { generatePlaceholderRows } from "./core/placeholder.js";
 export type { CsvOptions } from "./core/serializers/csv.js";
 export { datasetToCsv } from "./core/serializers/csv.js";
+export type { TsvOptions } from "./core/serializers/tsv.js";
 export { datasetToTsv } from "./core/serializers/tsv.js";
 export { datasetToJson } from "./core/serializers/json.js";
 export { exportReportToCsv, exportReportToTsv, exportReportToJson } from "./core/export.js";

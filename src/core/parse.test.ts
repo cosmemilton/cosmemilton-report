@@ -64,6 +64,28 @@ describe("parseReportGlobalConfig", () => {
     expect(result.marginTopMm).toBe(0);
   });
 
+  it.each(["58mm", "80mm"])(
+    "preserva o papel %s no storage e aplica defaults de rolo",
+    (paperSize) => {
+      const config = parseReportGlobalConfig({ paperSize, orientation: "landscape" });
+      expect(config).toMatchObject({
+        paperSize,
+        orientation: "portrait",
+        marginTopMm: 3,
+        marginBottomMm: 3,
+        marginLeftMm: 3,
+        marginRightMm: 3,
+      });
+      expect(parseReportGlobalConfig(JSON.parse(JSON.stringify(config)))).toEqual(config);
+      expect(
+        parseReportGlobalConfig({ paperSize, marginLeftMm: 0, marginRightMm: 5 }),
+      ).toMatchObject({
+        marginLeftMm: 0,
+        marginRightMm: 5,
+      });
+    },
+  );
+
   it("valida header e style campo a campo, preservando defaults nos campos inválidos", () => {
     const result = parseReportGlobalConfig({
       header: { title: "Relatório", showLogo: "não é boolean", showPageNumbers: false },

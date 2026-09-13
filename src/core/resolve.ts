@@ -1,7 +1,12 @@
 // resolveReport — coração da lib: mescla as camadas de config (default → globalConfig →
 // definição → view → overrides) campo a campo, seção por seção.
 import { normalizeColumnWidths, resolveColumns } from "./columns.js";
-import { defaultReportGlobalConfig, defaultReportHeader, defaultReportStyle } from "./defaults.js";
+import {
+  defaultReportGlobalConfig,
+  defaultReportHeader,
+  defaultReportStyle,
+  getReportPageDefaults,
+} from "./defaults.js";
 import type {
   ReportDefinition,
   ReportGlobalConfig,
@@ -67,14 +72,9 @@ export function resolveReport<T>(input: {
   style = mergeDefined(style, overrides?.style);
 
   // ---- page: default → globalConfig (papel/margens) → overrides (orientation/paperSize) ----
-  const defaultPage = {
-    paperSize: defaultReportGlobalConfig.paperSize,
-    orientation: defaultReportGlobalConfig.orientation,
-    marginTopMm: defaultReportGlobalConfig.marginTopMm,
-    marginBottomMm: defaultReportGlobalConfig.marginBottomMm,
-    marginLeftMm: defaultReportGlobalConfig.marginLeftMm,
-    marginRightMm: defaultReportGlobalConfig.marginRightMm,
-  };
+  const paperSize =
+    overrides?.paperSize ?? globalConfig?.paperSize ?? defaultReportGlobalConfig.paperSize;
+  const defaultPage = getReportPageDefaults(paperSize);
   let page: {
     paperSize: ReportPaperSize;
     orientation: ReportOrientation;
@@ -94,6 +94,8 @@ export function resolveReport<T>(input: {
     paperSize: overrides?.paperSize,
     orientation: overrides?.orientation,
   });
+  // A largura do rolo é física: paisagem inverteria a largura com a altura automática.
+  if (paperSize === "58mm" || paperSize === "80mm") page.orientation = "portrait";
 
   // ---- branding: default → globalConfig (não é sobreponível por definição/view/overrides) ----
   const defaultBranding = {

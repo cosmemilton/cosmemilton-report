@@ -14,6 +14,7 @@ import {
 } from "cosmemilton-report";
 import { renderReportResponse } from "cosmemilton-report/next";
 import { CmReportDesigner } from "cosmemilton-report/client";
+import { CmToastProvider } from "cosmemilton-ui/client";
 import { relatorioVendas, type Venda } from "./01-minimo.js";
 
 // ---------------------------------------------------------------------------
@@ -55,12 +56,15 @@ export function PaginaDesignerRelatorios(): ReactElement {
   }
 
   return (
-    <CmReportDesigner
-      dataSources={dataSources}
-      adapter={adapter}
-      getPreviewRows={async () => buscarAmostraVendas()}
-      onSaved={handleSaved}
-    />
+    // O provider também pode ficar no layout raiz. Deve sobreviver à navegação de onSaved.
+    <CmToastProvider>
+      <CmReportDesigner
+        dataSources={dataSources}
+        adapter={adapter}
+        getPreviewRows={async () => buscarAmostraVendas()}
+        onSaved={handleSaved}
+      />
+    </CmToastProvider>
   );
 }
 

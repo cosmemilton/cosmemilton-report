@@ -1,7 +1,13 @@
 // Valores default para as camadas de configuração do relatório.
 // Servem tanto como base do merge em `resolveReport` quanto como "reset de graça"
 // para quem quiser restaurar a config global/cabeçalho/estilo original.
-import type { ReportGlobalConfig, ReportHeaderConfig, ReportStyleConfig } from "./types.js";
+import type {
+  ReportGlobalConfig,
+  ReportHeaderConfig,
+  ReportPaperSize,
+  ReportStyleConfig,
+  ResolvedReport,
+} from "./types.js";
 
 /** Cabeçalho default: título/subtítulo vazios, tudo visível exceto o nome do usuário. */
 export const defaultReportHeader: Required<ReportHeaderConfig> = {
@@ -43,3 +49,17 @@ export const defaultReportGlobalConfig: ReportGlobalConfig = {
   header: defaultReportHeader,
   style: defaultReportStyle,
 };
+
+/** Defaults de página compartilhados por resolução, storage e editor. Margens explícitas
+ *  continuam prevalecendo; rolos térmicos usam 3 mm quando a margem não foi informada. */
+export function getReportPageDefaults(paperSize: ReportPaperSize): ResolvedReport<unknown>["page"] {
+  const thermal = paperSize === "58mm" || paperSize === "80mm";
+  return {
+    paperSize,
+    orientation: "portrait",
+    marginTopMm: thermal ? 3 : defaultReportGlobalConfig.marginTopMm,
+    marginBottomMm: thermal ? 3 : defaultReportGlobalConfig.marginBottomMm,
+    marginLeftMm: thermal ? 3 : defaultReportGlobalConfig.marginLeftMm,
+    marginRightMm: thermal ? 3 : defaultReportGlobalConfig.marginRightMm,
+  };
+}

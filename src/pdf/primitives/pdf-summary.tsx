@@ -23,12 +23,20 @@ export function ReportPdfSummary({ items, style }: ReportPdfSummaryProps): React
       wrap={false}
     >
       {items.map((item, index) => (
-        <View key={index} style={{ flexDirection: "row", marginTop: index === 0 ? 0 : 2 }}>
-          <Text style={{ fontSize: style.fontSize, color: "#374151", marginRight: 6 }}>
-            {item.label}:
+        <Text
+          key={index}
+          style={{
+            maxWidth: "100%",
+            fontSize: style.fontSize,
+            textAlign: "right",
+            marginTop: index === 0 ? 0 : 2,
+          }}
+        >
+          <Text style={{ color: "#374151" }}>
+            {item.label}:{"  "}
           </Text>
-          <Text style={{ fontSize: style.fontSize, fontWeight: "bold" }}>{item.formatted}</Text>
-        </View>
+          <Text style={{ fontWeight: "bold" }}>{item.formatted}</Text>
+        </Text>
       ))}
     </View>
   );

@@ -3,7 +3,7 @@
 // (`render.ts`, via `renderToBuffer`/`renderToStream`) quanto, na fase 9, pelo preview client
 // (`pdf(doc).toBlob()`). Ponto de extensão documentado do entry — os primitivos internos
 // (`ReportPdfDocument`/`ReportPdfTable`/`ReportPdfSummary`) não são exportados no barrel.
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement } from "react";
 import { buildReportDataset } from "../core/dataset.js";
 import { resolveReport } from "../core/resolve.js";
 import type { ReportRenderInput, ReportSectionContext } from "../core/types.js";
@@ -30,13 +30,13 @@ export function createReportDocument<T>(input: ReportRenderInput<T>): ReactEleme
   const sectionCtx: ReportSectionContext<T> = { rows, resolved, generatedAt, userName };
   const beforeTable = resolved.sections
     .filter((section) => section.position === "before-table")
-    .map((section) => section.pdfRender(sectionCtx));
+    .map((section) => <Fragment key={section.id}>{section.pdfRender(sectionCtx)}</Fragment>);
   const afterTable = resolved.sections
     .filter((section) => section.position === "after-table")
-    .map((section) => section.pdfRender(sectionCtx));
+    .map((section) => <Fragment key={section.id}>{section.pdfRender(sectionCtx)}</Fragment>);
   const afterSummary = resolved.sections
     .filter((section) => section.position === "after-summary")
-    .map((section) => section.pdfRender(sectionCtx));
+    .map((section) => <Fragment key={section.id}>{section.pdfRender(sectionCtx)}</Fragment>);
 
   return (
     <ReportPdfDocument

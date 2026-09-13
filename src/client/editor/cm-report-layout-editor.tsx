@@ -6,7 +6,7 @@
 // Quando `view.isSystem` (view somente leitura, nascida do registry via `createSystemView`) ou
 // `readOnly`, todos os controles ficam desabilitados e um aviso oferece duplicar a view para uma
 // cópia editável.
-import type { ReactElement } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import {
   CmAlert,
   CmButton,
@@ -14,6 +14,7 @@ import {
   CmTabsContent,
   CmTabsList,
   CmTabsTrigger,
+  useCmToast,
 } from "cosmemilton-ui/client";
 import { generatePlaceholderRows } from "../../core/placeholder.js";
 import type { ReportDefinition, ReportGlobalConfig, ReportView } from "../../core/types.js";
@@ -40,7 +41,7 @@ export type CmReportLayoutEditorProps<T> = {
   /** Força os mesmos controles desabilitados de uma view `isSystem`, mesmo que não seja uma. */
   readOnly?: boolean;
   /** Botão "Duplicar para editar" só aparece quando `view.isSystem` E este callback é passado. */
-  onDuplicate?: () => void;
+  onDuplicate?: () => void | Promise<void>;
   className?: string;
   labels?: Partial<CmReportLayoutEditorLabels>;
 };
@@ -49,6 +50,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ");
 }
 
+/** Requer `CmToastProvider` de `cosmemilton-ui/client` acima do editor. */
 export function CmReportLayoutEditor<T>(props: CmReportLayoutEditorProps<T>): ReactElement {
   const {
     definition,
@@ -63,6 +65,8 @@ export function CmReportLayoutEditor<T>(props: CmReportLayoutEditorProps<T>): Re
     className,
     labels,
   } = props;
+  const { toast } = useCmToast();
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const mergedLabels: CmReportLayoutEditorLabels = {
     ...defaultReportLayoutEditorLabels,
@@ -75,14 +79,34 @@ export function CmReportLayoutEditor<T>(props: CmReportLayoutEditorProps<T>): Re
   // definição — mesmo formato de amostra que o `CmReportDesigner` usará (Fase 10). As linhas
   // placeholder não são estruturalmente `T`, mas têm as mesmas chaves usadas por
   // `column.exportValue`/`pdfRender` default (`row[key]`), suficiente para a pré-visualização.
-  const placeholderRows = generatePlaceholderRows(
-    definition.columns.map((column) => ({ key: column.key, format: column.format })),
-    20,
-  ) as unknown as T[];
+  const placeholderRows = useMemo(
+    () =>
+      generatePlaceholderRows(
+        definition.columns.map((column) => ({ key: column.key, format: column.format })),
+        20,
+      ) as unknown as T[],
+    [definition.columns],
+  );
   const sourceColumns = definition.columns.map((column) => ({
     key: column.key,
     header: column.header,
   }));
+
+  async function handleDuplicate(): Promise<void> {
+    if (!onDuplicate || isDuplicating) return;
+    setIsDuplicating(true);
+    try {
+      await onDuplicate();
+      toast(mergedLabels.duplicateSuccess, { tone: "success" });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : mergedLabels.duplicateErrorFallback, {
+        tone: "danger",
+        title: mergedLabels.duplicateErrorTitle,
+      });
+    } finally {
+      setIsDuplicating(false);
+    }
+  }
 
   return (
     <div
@@ -99,7 +123,12 @@ export function CmReportLayoutEditor<T>(props: CmReportLayoutEditorProps<T>): Re
           className="cm-report-editor__notice"
           action={
             showDuplicateButton ? (
-              <CmButton type="button" variant="outline" onClick={onDuplicate}>
+              <CmButton
+                type="button"
+                variant="outline"
+                onClick={handleDuplicate}
+                loading={isDuplicating}
+              >
                 {mergedLabels.duplicateButton}
               </CmButton>
             ) : undefined
@@ -170,6 +199,9 @@ export function CmReportLayoutEditor<T>(props: CmReportLayoutEditorProps<T>): Re
               view={view}
               globalConfig={globalConfig}
               debounceMs={previewDebounceMs}
+              onError={(error) =>
+                toast(error.message, { tone: "danger", title: mergedLabels.previewErrorTitle })
+              }
             />
           </div>
         ) : null}

@@ -48,6 +48,56 @@ function makeDataset(): ReportDataset {
 }
 
 describe("datasetToCsv", () => {
+  it.each(["=1+1", "+SUM(1,1)", "-2+3", "@SUM(1,1)", "  =1+1", "\t+1", "\r\n-2", "\u00a0@x"])(
+    "neutraliza fórmula em texto e cabeçalho: %j",
+    (value) => {
+      const dataset = makeDataset();
+      dataset.columns[0].header = value;
+      dataset.rows = [
+        {
+          cells: [
+            { raw: value, formatted: value },
+            { raw: -12.5, formatted: "-12,50" },
+          ],
+        },
+      ];
+      const protectedField = `'${value}`;
+      const escaped = /[\r\n]/.test(value) ? `"${protectedField}"` : protectedField;
+      expect(datasetToCsv(dataset)).toBe(`\ufeff${escaped};Total\r\n${escaped};-12,50`);
+    },
+  );
+
+  it("mantém o escape de delimitador e aspas após neutralizar a fórmula", () => {
+    const dataset = makeDataset();
+    const value = '=HYPERLINK("https://example.com";"Abrir")';
+    dataset.rows = [{ cells: [{ raw: value, formatted: value }] }];
+    expect(datasetToCsv(dataset)).toBe(
+      '\ufeffNome;Total\r\n"\'=HYPERLINK(""https://example.com"";""Abrir"")"',
+    );
+  });
+
+  it("distingue número negativo de texto iniciado por menos", () => {
+    const dataset = makeDataset();
+    dataset.rows = [
+      {
+        cells: [
+          { raw: "-12,50", formatted: "-12,50" },
+          { raw: -12.5, formatted: "-12,50" },
+        ],
+      },
+    ];
+    expect(datasetToCsv(dataset, { includeBom: false })).toBe("Nome;Total\r\n'-12,50;-12,50");
+  });
+
+  it("escapeFormulas: false permite saída literal de texto e cabeçalho", () => {
+    const dataset = makeDataset();
+    dataset.columns[0].header = "=Nome";
+    dataset.rows = [{ cells: [{ raw: "+1", formatted: "+1" }] }];
+    expect(datasetToCsv(dataset, { escapeFormulas: false, includeBom: false })).toBe(
+      "=Nome;Total\r\n+1",
+    );
+  });
+
   it("começa com BOM por default", () => {
     const csv = datasetToCsv(makeDataset());
     expect(csv.charCodeAt(0)).toBe(0xfeff);

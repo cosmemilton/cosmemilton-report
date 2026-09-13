@@ -11,8 +11,9 @@
 // O `<input type="file">` nativo fica oculto e é acionado por um CmButton (mesma abordagem do
 // `<input type="color">` no StyleTab: o cosmemilton-ui não tem primitivo para isso).
 import { useRef, type ReactElement } from "react";
-import { CmButton, CmInput, CmSelect, CmSwitch } from "cosmemilton-ui/client";
+import { CmButton, CmInput, CmSelect, CmSwitch, useCmToast } from "cosmemilton-ui/client";
 import { CmIcon } from "cosmemilton-ui/server";
+import { getReportPageDefaults } from "../core/defaults.js";
 import type { ReportGlobalConfig, ReportOrientation, ReportPaperSize } from "../core/types.js";
 
 export type CmReportGlobalConfigEditorLabels = {
@@ -22,6 +23,9 @@ export type CmReportGlobalConfigEditorLabels = {
   logoUrl: string;
   logoUrlPlaceholder: string;
   logoUpload: string;
+  logoUploadSuccess: string;
+  logoInvalidFile: string;
+  logoReadError: string;
   logoClear: string;
   logoPreviewAlt: string;
   showLogo: string;
@@ -30,6 +34,8 @@ export type CmReportGlobalConfigEditorLabels = {
   paperSize: string;
   paperA4: string;
   paperLetter: string;
+  paper58mm: string;
+  paper80mm: string;
   orientation: string;
   orientationPortrait: string;
   orientationLandscape: string;
@@ -49,6 +55,9 @@ export const defaultReportGlobalConfigEditorLabels: CmReportGlobalConfigEditorLa
   logoUrl: "Logotipo (URL ou data URI)",
   logoUrlPlaceholder: "https://… ou data:image/png;base64,…",
   logoUpload: "Enviar imagem",
+  logoUploadSuccess: "Logotipo carregado.",
+  logoInvalidFile: "Selecione um arquivo de imagem.",
+  logoReadError: "Não foi possível carregar a imagem. Tente novamente.",
   logoClear: "Remover logotipo",
   logoPreviewAlt: "Pré-visualização do logotipo",
   showLogo: "Exibir logotipo nos relatórios",
@@ -57,6 +66,8 @@ export const defaultReportGlobalConfigEditorLabels: CmReportGlobalConfigEditorLa
   paperSize: "Papel",
   paperA4: "A4",
   paperLetter: "Carta (Letter)",
+  paper58mm: "Bobina 58 mm (PDV)",
+  paper80mm: "Bobina 80 mm (PDV)",
   orientation: "Orientação",
   orientationPortrait: "Retrato",
   orientationLandscape: "Paisagem",
@@ -85,13 +96,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
 
 type MarginField = "marginTopMm" | "marginBottomMm" | "marginLeftMm" | "marginRightMm";
 
-const MARGIN_DEFAULTS: Record<MarginField, number> = {
-  marginTopMm: 15,
-  marginBottomMm: 15,
-  marginLeftMm: 10,
-  marginRightMm: 10,
-};
-
+/** Requer um `CmToastProvider` ancestral para o feedback do upload de logotipo. */
 export function CmReportGlobalConfigEditor(props: CmReportGlobalConfigEditorProps): ReactElement {
   const { value, onChange, disabled, className, labels } = props;
   const l: CmReportGlobalConfigEditorLabels = {
@@ -99,18 +104,38 @@ export function CmReportGlobalConfigEditor(props: CmReportGlobalConfigEditorProp
     ...labels,
   };
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useCmToast();
+  const paperSize = value.paperSize ?? "A4";
+  const isThermalPaper = paperSize === "58mm" || paperSize === "80mm";
+  const pageDefaults = getReportPageDefaults(paperSize);
 
   function handleLogoFile(file: File | undefined): void {
-    if (!file || !file.type.startsWith("image/")) {
+    if (!file) {
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        onChange({ logoUrl: reader.result });
-      }
+    if (!file.type.startsWith("image/")) {
+      toast(l.logoInvalidFile, { tone: "danger" });
+      return;
+    }
+    const onReadError = () => {
+      toast(l.logoReadError, { tone: "danger" });
     };
-    reader.readAsDataURL(file);
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result !== "string" || !reader.result.startsWith("data:image/")) {
+          onReadError();
+          return;
+        }
+        onChange({ logoUrl: reader.result });
+        toast(l.logoUploadSuccess, { tone: "success" });
+      };
+      reader.onerror = onReadError;
+      reader.onabort = onReadError;
+      reader.readAsDataURL(file);
+    } catch {
+      onReadError();
+    }
   }
 
   const margins: { field: MarginField; label: string }[] = [
@@ -123,6 +148,8 @@ export function CmReportGlobalConfigEditor(props: CmReportGlobalConfigEditorProp
   const paperOptions = [
     { value: "A4", label: l.paperA4 },
     { value: "Letter", label: l.paperLetter },
+    { value: "58mm", label: l.paper58mm },
+    { value: "80mm", label: l.paper80mm },
   ];
   const orientationOptions = [
     { value: "portrait", label: l.orientationPortrait },
@@ -229,17 +256,22 @@ export function CmReportGlobalConfigEditor(props: CmReportGlobalConfigEditorProp
       <div className="cm-report-config__grid">
         <CmSelect
           label={l.paperSize}
-          value={value.paperSize ?? "A4"}
-          onChange={(next) => onChange({ paperSize: next as ReportPaperSize })}
+          value={paperSize}
+          onChange={(next) =>
+            onChange({
+              paperSize: next as ReportPaperSize,
+              ...(next === "58mm" || next === "80mm" ? { orientation: "portrait" } : {}),
+            })
+          }
           options={paperOptions}
           disabled={disabled}
         />
         <CmSelect
           label={l.orientation}
-          value={value.orientation ?? "portrait"}
+          value={isThermalPaper ? "portrait" : (value.orientation ?? "portrait")}
           onChange={(next) => onChange({ orientation: next as ReportOrientation })}
           options={orientationOptions}
-          disabled={disabled}
+          disabled={disabled || isThermalPaper}
         />
         <CmInput
           label={l.footerText}
@@ -260,7 +292,7 @@ export function CmReportGlobalConfigEditor(props: CmReportGlobalConfigEditorProp
             key={field}
             label={label}
             numeric="integer"
-            value={String(value[field] ?? MARGIN_DEFAULTS[field])}
+            value={String(value[field] ?? pageDefaults[field])}
             onChange={(event) => {
               const parsed = Number.parseInt(event.target.value, 10);
               if (Number.isFinite(parsed) && parsed >= 0) {

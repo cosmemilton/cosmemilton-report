@@ -60,6 +60,35 @@ describe("resolveReport", () => {
     expect(resolved.page.orientation).toBe("landscape");
   });
 
+  it.each(["58mm", "80mm"] as const)(
+    "resolve %s com largura fixa e margens de cupom",
+    (paperSize) => {
+      expect(
+        resolveReport({ definition, globalConfig: { paperSize, orientation: "landscape" } }).page,
+      ).toEqual({
+        paperSize,
+        orientation: "portrait",
+        marginTopMm: 3,
+        marginBottomMm: 3,
+        marginLeftMm: 3,
+        marginRightMm: 3,
+      });
+      expect(
+        resolveReport({
+          definition,
+          globalConfig: { paperSize: "A4", marginLeftMm: 0, marginRightMm: 5 },
+          overrides: { paperSize, orientation: "landscape" },
+        }).page,
+      ).toMatchObject({
+        paperSize,
+        orientation: "portrait",
+        marginTopMm: 3,
+        marginLeftMm: 0,
+        marginRightMm: 5,
+      });
+    },
+  );
+
   it("overrides ganham de tudo (globalConfig, definição e view)", () => {
     const view: ReportView = {
       id: "system:vendas",

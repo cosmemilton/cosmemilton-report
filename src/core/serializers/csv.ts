@@ -2,11 +2,14 @@
 // default (Excel pt-BR reconhece acentos e abre em colunas sem assistente de importação).
 // CSV é dado tabular puro: só header + rows — grupos/subtotais/summary ficam de fora.
 import type { ReportDataset } from "../types.js";
+import { escapeSpreadsheetFormula } from "./spreadsheet.js";
 
 export type CsvOptions = {
   delimiter?: string;
   includeBom?: boolean;
   lineBreak?: "\r\n" | "\n";
+  /** Prefixa textos/cabeçalhos que parecem fórmulas com apóstrofo. @default true */
+  escapeFormulas?: boolean;
 };
 
 /** Marca de ordem de bytes UTF-8 (BOM), usada por Excel pt-BR para detectar o encoding. */
@@ -35,13 +38,26 @@ export function datasetToCsv(dataset: ReportDataset, options?: CsvOptions): stri
   const delimiter = options?.delimiter ?? ";";
   const includeBom = options?.includeBom ?? true;
   const lineBreak = options?.lineBreak ?? "\r\n";
+  const escapeFormulas = options?.escapeFormulas ?? true;
 
   const headerLine = dataset.columns
-    .map((column) => escapeField(column.header, delimiter))
+    .map((column) =>
+      escapeField(
+        escapeFormulas ? escapeSpreadsheetFormula(column.header) : column.header,
+        delimiter,
+      ),
+    )
     .join(delimiter);
 
   const rowLines = dataset.rows.map((row) =>
-    row.cells.map((cell) => escapeField(cell.formatted, delimiter)).join(delimiter),
+    row.cells
+      .map((cell) =>
+        escapeField(
+          escapeFormulas ? escapeSpreadsheetFormula(cell.formatted, cell.raw) : cell.formatted,
+          delimiter,
+        ),
+      )
+      .join(delimiter),
   );
 
   const body = [headerLine, ...rowLines].join(lineBreak);

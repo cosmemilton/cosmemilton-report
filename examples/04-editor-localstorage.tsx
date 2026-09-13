@@ -12,7 +12,7 @@ import {
   type ReportView,
 } from "cosmemilton-report";
 import { CmReportLayoutEditor, useReportViews } from "cosmemilton-report/client";
-import { CmButton, CmSelect } from "cosmemilton-ui/client";
+import { CmAlert, CmButton, CmSelect, CmToastProvider, useCmToast } from "cosmemilton-ui/client";
 import { relatorioVendas } from "./01-minimo.js";
 
 // Factory pura — `options.storage` só é acessado dentro dos métodos do adapter, então é seguro
@@ -20,7 +20,17 @@ import { relatorioVendas } from "./01-minimo.js";
 const adapter = createLocalStorageReportAdapter();
 
 export function EditorLayoutVendas(): ReactElement {
-  const { views, selectedView, selectView, duplicateView, saveView, setDefault, isLoading } =
+  // No app, este provider pode ficar no layout raiz, compartilhado com as outras telas.
+  return (
+    <CmToastProvider>
+      <EditorLayoutVendasContent />
+    </CmToastProvider>
+  );
+}
+
+function EditorLayoutVendasContent(): ReactElement {
+  const { toast } = useCmToast();
+  const { views, selectedView, selectView, duplicateView, saveView, setDefault, isLoading, error } =
     useReportViews({
       slug: relatorioVendas.slug,
       // `useReportViews` só lê `slug`/`columns` da definição (nunca chama `exportValue`/
@@ -35,8 +45,11 @@ export function EditorLayoutVendas(): ReactElement {
     [views],
   );
 
-  if (isLoading || !selectedView) {
+  if (isLoading) {
     return <p>Carregando layouts…</p>;
+  }
+  if (!selectedView) {
+    return <CmAlert tone="danger" title={error ?? "Nenhum layout disponível."} />;
   }
 
   // Const própria (não o `selectedView` desestruturado) para que o TypeScript mantenha o tipo
@@ -49,14 +62,29 @@ export function EditorLayoutVendas(): ReactElement {
   }
 
   function handleViewChange(next: ReportView): void {
-    void saveView(next);
+    void saveView(next).catch((error: unknown) => {
+      toast(error instanceof Error ? error.message : "Falha ao salvar o layout.", {
+        tone: "danger",
+      });
+    });
+  }
+
+  async function handleSetDefault(): Promise<void> {
+    try {
+      await setDefault(view.id);
+      toast("Layout definido como padrão.", { tone: "success" });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Falha ao definir o layout padrão.", {
+        tone: "danger",
+      });
+    }
   }
 
   return (
     <div className="editor-layout-vendas">
       <div className="editor-layout-vendas__toolbar">
         <CmSelect label="Layout" value={view.id} onChange={selectView} options={viewOptions} />
-        <CmButton type="button" variant="outline" onClick={() => void setDefault(view.id)}>
+        <CmButton type="button" variant="outline" onClick={handleSetDefault}>
           Definir como padrão
         </CmButton>
       </div>

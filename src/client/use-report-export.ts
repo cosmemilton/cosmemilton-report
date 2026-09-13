@@ -147,8 +147,12 @@ export function useReportExport<T>(options: UseReportExportOptions<T>): UseRepor
           return;
         }
         case "pdf": {
-          const { renderReportToBuffer } = await import("../pdf.js");
-          downloadReportFile(await renderReportToBuffer(input), resolvedFileName, format);
+          const [{ pdf }, { createReportDocument }] = await Promise.all([
+            import("@react-pdf/renderer"),
+            import("../pdf.js"),
+          ]);
+          const document = createReportDocument(input) as Parameters<typeof pdf>[0];
+          downloadBlob(await pdf(document).toBlob(), `${resolvedFileName}.pdf`);
           return;
         }
         case "xlsx": {

@@ -21,4 +21,13 @@ describe("paperSizeToReactPdf", () => {
     expect(paperSizeToReactPdf("A4")).toBe("A4");
     expect(paperSizeToReactPdf("Letter")).toBe("LETTER");
   });
+
+  it.each([58, 80] as const)(
+    "mapeia rolos de %s mm para largura física e altura automática",
+    (width) => {
+      const size = paperSizeToReactPdf(`${width}mm`);
+      expect(size).toEqual({ width: mmToPt(width) });
+      expect(size).not.toHaveProperty("height");
+    },
+  );
 });

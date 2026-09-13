@@ -18,6 +18,10 @@ export type CmReportLayoutEditorLabels = {
   // Aviso de view do sistema (isSystem || readOnly)
   systemViewNotice: string;
   duplicateButton: string;
+  duplicateSuccess: string;
+  duplicateErrorTitle: string;
+  duplicateErrorFallback: string;
+  previewErrorTitle: string;
 
   // Aba Colunas
   showColumn: string;
@@ -88,6 +92,10 @@ export const defaultReportLayoutEditorLabels: CmReportLayoutEditorLabels = {
 
   systemViewNotice: "Visão do sistema — duplique para editar",
   duplicateButton: "Duplicar para editar",
+  duplicateSuccess: "Layout duplicado. A cópia está pronta para editar.",
+  duplicateErrorTitle: "Não foi possível duplicar o layout",
+  duplicateErrorFallback: "Falha ao duplicar o layout.",
+  previewErrorTitle: "Não foi possível gerar a pré-visualização",
 
   showColumn: "Exibir coluna",
   moveUp: "Mover para cima",

@@ -48,6 +48,8 @@ export type CmReportDesignerLabels = CmReportLayoutEditorLabels & {
   validationInvalidDefinition: string;
   saveErrorTitle: string;
   saveErrorFallback: string;
+  saveSuccess: string;
+  previewRowsError: string;
 };
 
 export const defaultReportDesignerLabels: CmReportDesignerLabels = {
@@ -81,4 +83,6 @@ export const defaultReportDesignerLabels: CmReportDesignerLabels = {
   validationInvalidDefinition: "Não foi possível salvar: verifique os dados do relatório.",
   saveErrorTitle: "Não foi possível salvar o relatório",
   saveErrorFallback: "Falha ao salvar o relatório.",
+  saveSuccess: "Relatório salvo com sucesso.",
+  previewRowsError: "Não foi possível carregar a amostra. A pré-visualização usa dados de exemplo.",
 };

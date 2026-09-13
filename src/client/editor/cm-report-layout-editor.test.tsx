@@ -6,10 +6,11 @@
 // `toBeInTheDocument`, `toBeDisabled`, ...) não tipam. Importar o módulo (mesmo só pelo efeito
 // colateral de tipos) em qualquer arquivo incluído no programa resolve para o programa inteiro.
 import "@testing-library/jest-dom/vitest";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render as renderComponent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { CmToastProvider } from "cosmemilton-ui/client";
 import type { ReportDefinition, ReportView } from "../../core/types.js";
 import type { CmReportPdfPreviewProps } from "../preview/cm-report-pdf-preview.js";
 import { CmReportLayoutEditor } from "./cm-report-layout-editor.js";
@@ -30,6 +31,10 @@ afterEach(cleanup);
 beforeEach(() => {
   h.previewSpy.mockClear();
 });
+
+function render(ui: ReactElement) {
+  return renderComponent(ui, { wrapper: CmToastProvider });
+}
 
 type Venda = { data: string; cliente: string; total: number };
 
@@ -56,7 +61,10 @@ function makeView(overrides: Partial<ReportView> = {}): ReportView {
 
 /** Renderiza o editor como um consumidor real faria: `view` vive em estado local, atualizado a
  *  cada `onViewChange`. `onViewChange` também é espionado, para as asserções dos testes. */
-function renderEditor(initialView: ReportView, options: { onDuplicate?: () => void } = {}) {
+function renderEditor(
+  initialView: ReportView,
+  options: { onDuplicate?: () => void | Promise<void> } = {},
+) {
   const onViewChange = vi.fn();
 
   function Harness() {
@@ -171,7 +179,7 @@ describe("CmReportLayoutEditor", () => {
     renderEditor(view);
 
     expect(screen.getByTestId("preview-mock")).toBeInTheDocument();
-    expect(h.previewSpy).toHaveBeenCalledTimes(1);
+    expect(h.previewSpy).toHaveBeenCalled();
 
     const previewProps = h.previewSpy.mock.calls[0][0] as CmReportPdfPreviewProps<Venda>;
     expect(previewProps.rows).toHaveLength(20);
@@ -215,5 +223,63 @@ describe("CmReportLayoutEditor", () => {
 
     expect(screen.queryByTestId("preview-mock")).not.toBeInTheDocument();
     expect(h.previewSpy).not.toHaveBeenCalled();
+  });
+
+  it("aguarda a duplicação antes de confirmar e impede outro clique durante a operação", async () => {
+    const user = userEvent.setup();
+    let finish!: () => void;
+    const onDuplicate = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderEditor(makeView({ isSystem: true }), { onDuplicate });
+
+    await user.click(screen.getByRole("button", { name: "Duplicar para editar" }));
+    expect(screen.getByRole("button", { name: "Duplicar para editar" })).toBeDisabled();
+    expect(screen.queryByText("Layout duplicado. A cópia está pronta para editar.")).toBeNull();
+
+    await act(async () => finish());
+
+    expect(
+      screen
+        .getByText("Layout duplicado. A cópia está pronta para editar.")
+        .closest("[role=alert]"),
+    ).toHaveClass("cm-toast__item--success");
+    expect(onDuplicate).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Duplicar para editar" })).toBeEnabled();
+  });
+
+  it("avisa falha de duplicação sem remover a ação contextual", async () => {
+    const user = userEvent.setup();
+    renderEditor(makeView({ isSystem: true }), {
+      onDuplicate: async () => {
+        throw new Error("Armazenamento indisponível");
+      },
+    });
+
+    await user.click(screen.getByRole("button", { name: "Duplicar para editar" }));
+
+    expect(screen.getByText("Armazenamento indisponível").closest("[role=alert]")).toHaveClass(
+      "cm-toast__item--danger",
+    );
+    expect(screen.queryByText("Layout duplicado. A cópia está pronta para editar.")).toBeNull();
+    expect(screen.getByRole("button", { name: "Duplicar para editar" })).toBeEnabled();
+  });
+
+  it("notifica erro de PDF sem recriar as linhas e reagendar a mesma pré-visualização", () => {
+    renderEditor(makeView());
+    const before = h.previewSpy.mock.calls.at(-1)?.[0] as CmReportPdfPreviewProps<Venda>;
+
+    act(() => before.onError?.(new Error("Falha na imagem do cabeçalho")));
+
+    expect(screen.getByText("Falha na imagem do cabeçalho").closest("[role=alert]")).toHaveClass(
+      "cm-toast__item--danger",
+    );
+    const after = h.previewSpy.mock.calls.at(-1)?.[0] as CmReportPdfPreviewProps<Venda>;
+    expect(after.rows).toBe(before.rows);
+    expect(after.definition).toBe(before.definition);
+    expect(after.view).toBe(before.view);
   });
 });

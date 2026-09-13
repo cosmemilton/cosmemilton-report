@@ -23,6 +23,12 @@ export function widthPct(pct: number): `${number}%` {
 }
 
 /** Mapeia o `ReportPaperSize` do core para o valor de `<Page size>` aceito pelo react-pdf. */
-export function paperSizeToReactPdf(paperSize: ReportPaperSize): "A4" | "LETTER" {
+export function paperSizeToReactPdf(
+  paperSize: ReportPaperSize,
+): "A4" | "LETTER" | { width: number } {
+  if (paperSize === "58mm" || paperSize === "80mm") {
+    // Sem altura fixa, o react-pdf dimensiona o cupom conforme seu conteúdo.
+    return { width: mmToPt(paperSize === "58mm" ? 58 : 80) };
+  }
   return paperSize === "Letter" ? "LETTER" : "A4";
 }

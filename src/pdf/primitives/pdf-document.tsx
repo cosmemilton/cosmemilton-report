@@ -45,6 +45,7 @@ export function ReportPdfDocument<T>({
   children,
 }: ReportPdfDocumentProps<T>): ReactElement {
   const { header, branding, page, style, title, subtitle, fontFamily } = resolved;
+  const thermal = page.paperSize === "58mm" || page.paperSize === "80mm";
 
   const logoSrc = header.showLogo && branding.showLogo ? branding.logoUrl : undefined;
   const companyName =
@@ -55,6 +56,7 @@ export function ReportPdfDocument<T>({
       <Page
         size={paperSizeToReactPdf(page.paperSize)}
         orientation={page.orientation}
+        wrap={!thermal}
         style={{
           paddingTop: mmToPt(page.marginTopMm),
           paddingBottom: mmToPt(page.marginBottomMm),
@@ -67,29 +69,39 @@ export function ReportPdfDocument<T>({
         <View
           fixed
           style={{
-            flexDirection: "row",
+            flexDirection: thermal ? "column" : "row",
             justifyContent: "space-between",
             alignItems: "flex-start",
-            marginBottom: 12,
-            paddingBottom: 8,
+            marginBottom: thermal ? 6 : 12,
+            paddingBottom: thermal ? 4 : 8,
             borderBottomWidth: 1,
             borderBottomColor: style.accentColor,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
             {logoSrc ? (
               <Image src={logoSrc} style={{ width: 32, height: 32, marginRight: 8 }} />
             ) : null}
-            <View>
-              <Text style={{ fontSize: 16, fontWeight: "bold", color: style.accentColor }}>
+            <View style={{ flexShrink: 1 }}>
+              <Text
+                style={{
+                  fontSize: thermal ? 11 : 16,
+                  fontWeight: "bold",
+                  color: style.accentColor,
+                }}
+              >
                 {title}
               </Text>
               {subtitle ? (
-                <Text style={{ fontSize: 10, color: "#4b5563", marginTop: 2 }}>{subtitle}</Text>
+                <Text style={{ fontSize: thermal ? 8 : 10, color: "#4b5563", marginTop: 2 }}>
+                  {subtitle}
+                </Text>
               ) : null}
             </View>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
+          <View
+            style={{ alignItems: thermal ? "flex-start" : "flex-end", marginTop: thermal ? 4 : 0 }}
+          >
             {companyName ? (
               <Text style={{ fontSize: style.fontSize, color: "#374151" }}>{companyName}</Text>
             ) : null}
@@ -109,13 +121,18 @@ export function ReportPdfDocument<T>({
         {children}
 
         <View
-          fixed
+          fixed={!thermal}
+          wrap={false}
           style={{
-            position: "absolute",
-            bottom: Math.max(mmToPt(page.marginBottomMm) - 16, 8),
-            left: mmToPt(page.marginLeftMm),
-            right: mmToPt(page.marginRightMm),
-            flexDirection: "row",
+            ...(thermal
+              ? { marginTop: 8 }
+              : {
+                  position: "absolute",
+                  bottom: Math.max(mmToPt(page.marginBottomMm) - 16, 8),
+                  left: mmToPt(page.marginLeftMm),
+                  right: mmToPt(page.marginRightMm),
+                }),
+            flexDirection: thermal ? "column" : "row",
             justifyContent: "space-between",
             paddingTop: 4,
             borderTopWidth: 0.5,

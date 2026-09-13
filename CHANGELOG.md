@@ -1,5 +1,35 @@
 # cosmemilton-report
 
+## 0.3.0
+
+### Minor Changes
+
+- Repete os cabeçalhos de coluna nas páginas de continuação da tabela PDF, preservando
+  agrupamentos, totais e seções personalizadas sem sobreposição com o cabeçalho do relatório.
+
+  Adiciona papel térmico `58mm` e `80mm` para PDV: bobina contínua com altura automática, largura
+  fixa, margens padrão de 3 mm, cabeçalho vertical e rodapé após o conteúdo. Os formatos estão
+  disponíveis no editor global, na configuração, nos overrides e na persistência.
+  Sumários com rótulos longos passam a quebrar linha dentro da área imprimível do cupom.
+
+  Adapta o editor de layout, designer e editor global aos toasts do `cosmemilton-ui` para
+  validação, sucesso e falhas de operações. Esses componentes passam a exigir `CmToastProvider`
+  ancestral; exemplos e README mostram a integração. A duplicação aceita callbacks assíncronos
+  e mantém o aviso contextual e a ação de duplicar visíveis.
+
+  Acrescenta testes de PDFs reais (texto, coordenadas, paginação e dimensões de bobina), toasts
+  com provider real, uploads de logotipo e persistência dos novos formatos.
+
+### Patch Changes
+
+- Corrige a exportação PDF sem endpoint no navegador, usando `pdf(document).toBlob()` em vez da
+  API `renderToBuffer`, exclusiva do Node.js.
+
+  CSV e TSV passam a neutralizar fórmulas em textos e cabeçalhos por padrão, inclusive após
+  espaços, tabs ou quebras de linha, preservando valores numéricos negativos, BOM e escaping.
+  Adiciona `escapeFormulas: false` a `CsvOptions` e `TsvOptions` para integrações que precisam da
+  saída literal; o atalho `exportReportToTsv` também recebe as opções.
+
 ## 0.2.1
 
 ### Patch Changes

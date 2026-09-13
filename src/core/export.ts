@@ -5,6 +5,7 @@ import { resolveReport } from "./resolve.js";
 import type { CsvOptions } from "./serializers/csv.js";
 import { datasetToCsv } from "./serializers/csv.js";
 import { datasetToJson } from "./serializers/json.js";
+import type { TsvOptions } from "./serializers/tsv.js";
 import { datasetToTsv } from "./serializers/tsv.js";
 import type { ReportDataset, ReportRenderInput } from "./types.js";
 
@@ -30,8 +31,8 @@ export function exportReportToCsv<T>(input: ReportRenderInput<T>, options?: CsvO
 }
 
 /** Atalho: `input` → TSV (tab, sem BOM). */
-export function exportReportToTsv<T>(input: ReportRenderInput<T>): string {
-  return datasetToTsv(buildDatasetFromInput(input));
+export function exportReportToTsv<T>(input: ReportRenderInput<T>, options?: TsvOptions): string {
+  return datasetToTsv(buildDatasetFromInput(input), options);
 }
 
 /** Atalho: `input` → JSON (`shape: "rows"` por default; ver `datasetToJson`). */

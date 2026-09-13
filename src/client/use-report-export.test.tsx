@@ -3,6 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReportDefinition } from "../core/types.js";
 import { useReportExport } from "./use-report-export.js";
 
+const pdfMocks = vi.hoisted(() => ({
+  pdf: vi.fn(),
+  renderToBuffer: vi.fn(() => {
+    throw new Error("renderToBuffer is a Node specific API.");
+  }),
+}));
+
+// No navegador, a API de buffer do renderer lança; o download deve usar pdf(doc).toBlob().
+vi.mock("@react-pdf/renderer", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@react-pdf/renderer")>()),
+  pdf: pdfMocks.pdf,
+  renderToBuffer: pdfMocks.renderToBuffer,
+}));
+
 type Venda = { data: string; cliente: string; total: number };
 
 const definition: ReportDefinition<Venda> = {
@@ -43,6 +57,8 @@ function fetchResponse(options: {
 }
 
 beforeEach(() => {
+  pdfMocks.pdf.mockReset();
+  pdfMocks.renderToBuffer.mockClear();
   createObjectURL = vi.fn(() => "blob:mock-url");
   revokeObjectURL = vi.fn();
   URL.createObjectURL = createObjectURL as unknown as typeof URL.createObjectURL;
@@ -143,6 +159,49 @@ describe("useReportExport — modo endpoint", () => {
 });
 
 describe("useReportExport — modo client-side", () => {
+  it("pdf: usa a API de Blob do navegador e nunca a API de buffer exclusiva do Node", async () => {
+    const pdfBlob = new Blob(["%PDF-1.7"], { type: "application/pdf" });
+    const toBlob = vi.fn().mockResolvedValue(pdfBlob);
+    pdfMocks.pdf.mockReturnValue({ toBlob });
+    const createElementSpy = vi.spyOn(document, "createElement");
+    const { result } = renderHook(() =>
+      useReportExport<Venda>({ definition, fileName: "relatorio-vendas" }),
+    );
+
+    await act(async () => {
+      await result.current.exportReport({ format: "pdf", rows });
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(pdfMocks.renderToBuffer).not.toHaveBeenCalled();
+    expect(pdfMocks.pdf).toHaveBeenCalledTimes(1);
+    expect(toBlob).toHaveBeenCalledTimes(1);
+    expect(createObjectURL).toHaveBeenCalledWith(pdfBlob);
+    const anchor = createElementSpy.mock.results.find(
+      (call) => (call.value as HTMLElement).tagName === "A",
+    )?.value as HTMLAnchorElement;
+    expect(anchor.download).toBe("relatorio-vendas.pdf");
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(result.current.lastError).toBeNull();
+    expect(result.current.isExporting).toBe(false);
+  });
+
+  it("pdf: falha ao gerar o Blob informa lastError e não dispara download", async () => {
+    pdfMocks.pdf.mockReturnValue({
+      toBlob: vi.fn().mockRejectedValue(new Error("Falha na geração do PDF")),
+    });
+    const { result } = renderHook(() => useReportExport<Venda>({ definition }));
+
+    await act(async () => {
+      await result.current.exportReport({ format: "pdf", rows });
+    });
+
+    expect(result.current.lastError).toBe("Falha na geração do PDF");
+    expect(result.current.isExporting).toBe(false);
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(clickSpy).not.toHaveBeenCalled();
+  });
+
   it("csv: gera e baixa sem chamar fetch; conteúdo do Blob começa com BOM", async () => {
     const { result } = renderHook(() => useReportExport<Venda>({ definition }));
 

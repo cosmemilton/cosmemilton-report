@@ -1,6 +1,6 @@
 {
   "name": "cosmemilton-report",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Report builder React para Next.js — definição declarativa de relatórios com export em PDF, CSV, XLSX, JSON e TSV, editor visual de layout e config em camadas.",
   "author": "Cosme Milton <milton.cosme@gmail.com>",
   "license": "ISC",
@@ -131,6 +131,7 @@
     "exceljs": "^4.4.0",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
+    "pdfjs-dist": "~5.4.624",
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "publint": "^0.3.21",

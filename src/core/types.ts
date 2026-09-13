@@ -178,7 +178,8 @@ export type ReportView = {
   updatedAt?: string;
 };
 
-export type ReportPaperSize = "A4" | "Letter";
+/** Papéis de folha ou rolos térmicos de largura fixa e altura automática conforme o conteúdo. */
+export type ReportPaperSize = "A4" | "Letter" | "58mm" | "80mm";
 export type ReportOrientation = "portrait" | "landscape";
 export type ReportGlobalConfig = {
   companyName?: string;
