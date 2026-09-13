@@ -68,4 +68,31 @@ describe("formatValue", () => {
     expect(formatValue("abc", "currency")).toBe("");
     expect(formatValue("abc", "number")).toBe("");
   });
+
+  it("mantém locale, moeda e precisão independentes entre relatórios consecutivos", () => {
+    for (let index = 0; index < 3; index += 1) {
+      expect(normalize(formatValue(1234.567, "number", { locale: "en-US", decimals: 3 }))).toBe(
+        "1,234.567",
+      );
+      expect(normalize(formatValue(1234.567, "number", { locale: "pt-BR", decimals: 2 }))).toBe(
+        "1.234,57",
+      );
+      expect(normalize(formatValue(12.5, "currency", { locale: "en-US", currency: "USD" }))).toBe(
+        "$12.50",
+      );
+      expect(normalize(formatValue(12.5, "currency", { locale: "ja-JP", currency: "JPY" }))).toBe(
+        "￥13",
+      );
+      expect(formatValue(0.125, "percent", { locale: "en-US", decimals: 1 })).toBe("12.5%");
+      expect(formatValue(12.5, "integer", { locale: "en-US", decimals: 3 })).toBe("13");
+    }
+  });
+
+  it("continua validando opções inválidas depois de formatar valores válidos", () => {
+    expect(formatValue(1, "number", { decimals: 2 })).toBe("1,00");
+    expect(() => formatValue(1, "number", { decimals: -1 })).toThrow(RangeError);
+    expect(() => formatValue(1, "currency", { currency: "INVALID" })).toThrow(RangeError);
+    expect(() => formatValue(1, "number", { locale: "not_a_locale" })).toThrow(RangeError);
+    expect(formatValue(1, "number", { decimals: 2 })).toBe("1,00");
+  });
 });

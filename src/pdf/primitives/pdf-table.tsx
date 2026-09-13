@@ -2,30 +2,17 @@
 // alinhamento conforme `resolved.style`), grupos com subtotal e total geral.
 // Componente interno: não é exportado no barrel `src/pdf.ts`.
 //
-// Reaproveita o `dataset` (calculado uma única vez por `buildReportDataset` em
-// `../create-document.js` e recebido via prop) para os valores formatados e para os números de
-// subtotal/total — a MESMA lógica usada pelos serializers CSV/TSV/JSON, então os números batem.
-// `rows`/`resolved.group` só são usados aqui para reobter a linha original `T` de cada célula,
-// necessária pelo `ReportPdfCellContext` de `column.pdfRender` (o dataset guarda só
-// `{raw, formatted}`, não a linha original). `groupRows` é pura e determinística, então chamá-la
-// de novo aqui com os mesmos argumentos que `buildReportDataset` usou internamente reproduz
-// exatamente o mesmo agrupamento, na mesma ordem — por isso o pareamento por índice é seguro.
+// Recebe um bloco do fluxo visual, com referências às linhas originais e às células do
+// dataset completo. A paginação não recalcula agrupamentos, subtotais nem totais.
 import { Text, View } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
-import { groupRows } from "../../core/groups.js";
-import type {
-  ReportDataset,
-  ReportDatasetCell,
-  ReportPdfCellContext,
-  ResolvedReport,
-  ResolvedReportColumn,
-} from "../../core/types.js";
+import type { ReportDatasetCell, ResolvedReport, ResolvedReportColumn } from "../../core/types.js";
 import { widthPct } from "../map-columns.js";
+import type { ReportPdfTableBlock } from "../table-blocks.js";
 
 export type ReportPdfTableProps<T> = {
   resolved: ResolvedReport<T>;
-  rows: T[];
-  dataset: ReportDataset;
+  block: ReportPdfTableBlock<T>;
 };
 
 const DENSITY_PADDING: Record<"compact" | "normal" | "relaxed", number> = {
@@ -46,37 +33,6 @@ function cellStyle<T>(column: ResolvedReportColumn<T>, padding: number, showGrid
     padding,
     ...(showGridLines ? { borderWidth: 0.5, borderColor: GRID_COLOR } : {}),
   };
-}
-
-type RowWithOriginal<T> = { row: T; cells: ReportDatasetCell[] };
-type GroupWithOriginal<T> = {
-  key: string;
-  label: string;
-  rows: RowWithOriginal<T>[];
-  subtotal?: (ReportDatasetCell | null)[];
-};
-
-function pairGroupsWithDataset<T>(
-  resolved: ResolvedReport<T>,
-  rows: T[],
-  dataset: ReportDataset,
-): GroupWithOriginal<T>[] | null {
-  if (!resolved.group) {
-    return null;
-  }
-  const grouped = groupRows(rows, resolved.group);
-  return grouped.map((group, groupIndex) => {
-    const datasetGroup = dataset.groups?.[groupIndex];
-    return {
-      key: group.key,
-      label: group.label,
-      rows: group.rows.map((row, rowIndex) => ({
-        row,
-        cells: datasetGroup?.rows[rowIndex]?.cells ?? [],
-      })),
-      subtotal: datasetGroup?.subtotal,
-    };
-  });
 }
 
 function HeaderRow<T>({
@@ -119,16 +75,16 @@ function HeaderRow<T>({
 }
 
 function DataRow<T>({
-  row,
   cells,
+  renderedCells,
   index,
   columns,
   style,
   padding,
   showGridLines,
 }: {
-  row: T;
   cells: ReportDatasetCell[];
+  renderedCells?: (ReactElement | undefined)[];
   index: number;
   columns: ResolvedReportColumn<T>[];
   style: ResolvedReport<T>["style"];
@@ -146,20 +102,13 @@ function DataRow<T>({
     >
       {columns.map((column, columnIndex) => {
         const cell = cells[columnIndex] ?? null;
-        const ctx: ReportPdfCellContext<T> = {
-          row,
-          value: cell?.raw,
-          formatted: cell?.formatted ?? "",
-          column,
-          style,
-        };
         return (
           <View key={column.key} style={cellStyle(column, padding, showGridLines)}>
             {column.pdfRender ? (
-              column.pdfRender(ctx)
+              (renderedCells?.[columnIndex] ?? null)
             ) : (
               <Text style={{ fontSize: style.fontSize, textAlign: column.align }}>
-                {ctx.formatted}
+                {cell?.formatted ?? ""}
               </Text>
             )}
           </View>
@@ -208,33 +157,10 @@ function AggregateRow<T>({
   );
 }
 
-export function ReportPdfTable<T>({
-  resolved,
-  rows,
-  dataset,
-}: ReportPdfTableProps<T>): ReactElement {
+export function ReportPdfTable<T>({ resolved, block }: ReportPdfTableProps<T>): ReactElement {
   const { style, visibleColumns: columns } = resolved;
   const padding = DENSITY_PADDING[style.density];
   const showGridLines = style.showGridLines;
-  const groups = pairGroupsWithDataset(resolved, rows, dataset);
-
-  let rowIndex = 0;
-  function nextDataRow(row: T, cells: ReportDatasetCell[]): ReactElement {
-    const element = (
-      <DataRow
-        key={rowIndex}
-        row={row}
-        cells={cells}
-        index={rowIndex}
-        columns={columns}
-        style={style}
-        padding={padding}
-        showGridLines={showGridLines}
-      />
-    );
-    rowIndex += 1;
-    return element;
-  }
 
   return (
     <View>
@@ -243,37 +169,40 @@ export function ReportPdfTable<T>({
           acima dele; sections fora da tabela não recebem cabeçalhos de coluna. */}
       <HeaderRow columns={columns} style={style} padding={padding} showGridLines={showGridLines} />
 
-      {groups
-        ? groups.map((group) => (
-            <View key={group.key}>
-              <View style={{ backgroundColor: GROUP_BG_COLOR, padding }} wrap={false}>
-                <Text style={{ fontSize: style.fontSize, fontWeight: "bold" }}>{group.label}</Text>
-              </View>
-              {group.rows.map((item) => nextDataRow(item.row, item.cells))}
-              {group.subtotal ? (
-                <AggregateRow
-                  columns={columns}
-                  aggregate={group.subtotal}
-                  label="Subtotal"
-                  style={style}
-                  padding={padding}
-                  showGridLines={showGridLines}
-                />
-              ) : null}
+      {block.entries.map((entry) => {
+        if (entry.kind === "group") {
+          return (
+            <View key={entry.key} style={{ backgroundColor: GROUP_BG_COLOR, padding }} wrap={false}>
+              <Text style={{ fontSize: style.fontSize, fontWeight: "bold" }}>{entry.label}</Text>
             </View>
-          ))
-        : dataset.rows.map((item, index) => nextDataRow(rows[index], item.cells))}
-
-      {dataset.total ? (
-        <AggregateRow
-          columns={columns}
-          aggregate={dataset.total}
-          label="Total"
-          style={style}
-          padding={padding}
-          showGridLines={showGridLines}
-        />
-      ) : null}
+          );
+        }
+        if (entry.kind === "aggregate") {
+          return (
+            <AggregateRow
+              key={entry.key}
+              columns={columns}
+              aggregate={entry.cells}
+              label={entry.label}
+              style={style}
+              padding={padding}
+              showGridLines={showGridLines}
+            />
+          );
+        }
+        return (
+          <DataRow
+            key={entry.key}
+            cells={entry.cells}
+            renderedCells={entry.renderedCells}
+            index={entry.index}
+            columns={columns}
+            style={style}
+            padding={padding}
+            showGridLines={showGridLines}
+          />
+        );
+      })}
     </View>
   );
 }

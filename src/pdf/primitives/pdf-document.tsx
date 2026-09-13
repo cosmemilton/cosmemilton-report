@@ -1,11 +1,12 @@
 // pdf-document.tsx — moldura de página do PDF: <Document><Page> com margens mm→pt, cabeçalho e
-// rodapé `fixed` (repetem em toda página) envolvendo o conteúdo do relatório (`children`).
+// rodapé `fixed` (repetem em toda página) envolvendo os blocos de conteúdo do relatório.
 // Componente interno: não é exportado no barrel `src/pdf.ts` (ponto de extensão é
 // `createReportDocument`, em `../create-document.js`).
 import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import type { ReactElement, ReactNode } from "react";
 import type { ResolvedReport } from "../../core/types.js";
 import { mmToPt, paperSizeToReactPdf } from "../map-columns.js";
+import { ReportPdfFooter } from "./pdf-footer.js";
 
 export type ReportPdfDocumentProps<T> = {
   resolved: ResolvedReport<T>;
@@ -15,8 +16,46 @@ export type ReportPdfDocumentProps<T> = {
    *  `ResolvedReport` porque não é uma configuração sobreponível por definição/view/overrides,
    *  então `createReportDocument` o repassa direto do `globalConfig` de entrada. */
   footerText?: string;
-  children: ReactNode;
+  /** Cada bloco inicia um Page; o renderer pode subdividi-lo conforme a altura real. */
+  blocks: ReactNode[];
+  renderFooter?: boolean;
 };
+
+function pageStyle<T>(resolved: ResolvedReport<T>) {
+  const { page, style, fontFamily } = resolved;
+  return {
+    paddingTop: mmToPt(page.marginTopMm),
+    paddingBottom: mmToPt(page.marginBottomMm),
+    paddingLeft: mmToPt(page.marginLeftMm),
+    paddingRight: mmToPt(page.marginRightMm),
+    fontSize: style.fontSize,
+    fontFamily: fontFamily || "Helvetica",
+  };
+}
+
+/** Páginas transparentes só com rodapé; a geometria vem do PDF já paginado. */
+export function createReportFooterDocument<T>(
+  resolved: ResolvedReport<T>,
+  footerText: string | undefined,
+  pages: { width: number; height: number; pageNumber: number }[],
+  totalPages: number,
+): ReactElement {
+  return (
+    <Document>
+      {pages.map(({ width, height, pageNumber }) => (
+        // Keep pagination enabled: React PDF assigns the physical page height during
+        // pagination. With wrap=false an absolute-only page shrinks to its padding.
+        <Page key={pageNumber} size={{ width, height }} style={pageStyle(resolved)}>
+          <ReportPdfFooter
+            resolved={resolved}
+            footerText={footerText}
+            pageNumbers={{ pageNumber, totalPages }}
+          />
+        </Page>
+      ))}
+    </Document>
+  );
+}
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -42,9 +81,10 @@ export function ReportPdfDocument<T>({
   generatedAt,
   userName,
   footerText,
-  children,
+  blocks,
+  renderFooter = true,
 }: ReportPdfDocumentProps<T>): ReactElement {
-  const { header, branding, page, style, title, subtitle, fontFamily } = resolved;
+  const { header, branding, page, style, title, subtitle } = resolved;
   const thermal = page.paperSize === "58mm" || page.paperSize === "80mm";
 
   const logoSrc = header.showLogo && branding.showLogo ? branding.logoUrl : undefined;
@@ -53,102 +93,74 @@ export function ReportPdfDocument<T>({
 
   return (
     <Document title={title}>
-      <Page
-        size={paperSizeToReactPdf(page.paperSize)}
-        orientation={page.orientation}
-        wrap={!thermal}
-        style={{
-          paddingTop: mmToPt(page.marginTopMm),
-          paddingBottom: mmToPt(page.marginBottomMm),
-          paddingLeft: mmToPt(page.marginLeftMm),
-          paddingRight: mmToPt(page.marginRightMm),
-          fontSize: style.fontSize,
-          fontFamily: fontFamily || "Helvetica",
-        }}
-      >
-        <View
-          fixed
-          style={{
-            flexDirection: thermal ? "column" : "row",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: thermal ? 6 : 12,
-            paddingBottom: thermal ? 4 : 8,
-            borderBottomWidth: 1,
-            borderBottomColor: style.accentColor,
-          }}
+      {blocks.map((content, index) => (
+        <Page
+          key={index}
+          size={paperSizeToReactPdf(page.paperSize)}
+          orientation={page.orientation}
+          wrap={!thermal}
+          style={pageStyle(resolved)}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
-            {logoSrc ? (
-              <Image src={logoSrc} style={{ width: 32, height: 32, marginRight: 8 }} />
-            ) : null}
-            <View style={{ flexShrink: 1 }}>
-              <Text
-                style={{
-                  fontSize: thermal ? 11 : 16,
-                  fontWeight: "bold",
-                  color: style.accentColor,
-                }}
-              >
-                {title}
-              </Text>
-              {subtitle ? (
-                <Text style={{ fontSize: thermal ? 8 : 10, color: "#4b5563", marginTop: 2 }}>
-                  {subtitle}
+          <View
+            fixed
+            style={{
+              flexDirection: thermal ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: thermal ? 6 : 12,
+              paddingBottom: thermal ? 4 : 8,
+              borderBottomWidth: 1,
+              borderBottomColor: style.accentColor,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
+              {logoSrc ? (
+                <Image src={logoSrc} style={{ width: 32, height: 32, marginRight: 8 }} />
+              ) : null}
+              <View style={{ flexShrink: 1 }}>
+                <Text
+                  style={{
+                    fontSize: thermal ? 11 : 16,
+                    fontWeight: "bold",
+                    color: style.accentColor,
+                  }}
+                >
+                  {title}
+                </Text>
+                {subtitle ? (
+                  <Text style={{ fontSize: thermal ? 8 : 10, color: "#4b5563", marginTop: 2 }}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+            <View
+              style={{
+                alignItems: thermal ? "flex-start" : "flex-end",
+                marginTop: thermal ? 4 : 0,
+              }}
+            >
+              {companyName ? (
+                <Text style={{ fontSize: style.fontSize, color: "#374151" }}>{companyName}</Text>
+              ) : null}
+              {header.showGeneratedAt ? (
+                <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
+                  Gerado em {formatGeneratedAt(generatedAt)}
+                </Text>
+              ) : null}
+              {header.showUserName && userName ? (
+                <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
+                  {userName}
                 </Text>
               ) : null}
             </View>
           </View>
-          <View
-            style={{ alignItems: thermal ? "flex-start" : "flex-end", marginTop: thermal ? 4 : 0 }}
-          >
-            {companyName ? (
-              <Text style={{ fontSize: style.fontSize, color: "#374151" }}>{companyName}</Text>
-            ) : null}
-            {header.showGeneratedAt ? (
-              <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
-                Gerado em {formatGeneratedAt(generatedAt)}
-              </Text>
-            ) : null}
-            {header.showUserName && userName ? (
-              <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
-                {userName}
-              </Text>
-            ) : null}
-          </View>
-        </View>
 
-        {children}
+          {content}
 
-        <View
-          fixed={!thermal}
-          wrap={false}
-          style={{
-            ...(thermal
-              ? { marginTop: 8 }
-              : {
-                  position: "absolute",
-                  bottom: Math.max(mmToPt(page.marginBottomMm) - 16, 8),
-                  left: mmToPt(page.marginLeftMm),
-                  right: mmToPt(page.marginRightMm),
-                }),
-            flexDirection: thermal ? "column" : "row",
-            justifyContent: "space-between",
-            paddingTop: 4,
-            borderTopWidth: 0.5,
-            borderTopColor: "#d1d5db",
-            fontSize: Math.max(style.fontSize - 1, 6),
-            color: "#6b7280",
-          }}
-        >
-          <Text>{footerText ?? ""}</Text>
-          {header.showPageNumbers ? (
-            <Text
-              render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`}
-            />
-          ) : null}
-        </View>
-      </Page>
+          {renderFooter ? <ReportPdfFooter resolved={resolved} footerText={footerText} /> : null}
+        </Page>
+      ))}
     </Document>
   );
 }

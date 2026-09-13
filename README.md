@@ -20,8 +20,9 @@ overrides por chamada).
 npm i cosmemilton-report
 ```
 
-O core (`cosmemilton-report`) é zero-dependency e roda em qualquer lugar (server e client). Os
-demais recursos dependem de peers **opcionais** — instale só o que for usar:
+O core (`cosmemilton-report`) não importa dependências em runtime e roda no server e no client.
+O pacote inclui `pdfkit` e `pdf-lib`, carregados apenas pela geração PDF no servidor. Os demais
+recursos dependem de peers **opcionais** — instale só o que for usar:
 
 | Peer                                           | Necessário para                                                                                      | Quando instalar                                                                                                                                           |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -139,7 +140,7 @@ Prontos para explorar mais: [`examples/04-editor-localstorage.tsx`](./examples/0
 
 | Entry                       | Conteúdo                                                                                                                                                         | Peer necessário                     |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `cosmemilton-report`        | Core headless, server-safe, zero deps: `defineReport`, `resolveReport`, formatters, registry, storage adapters (memória/localStorage), serializers CSV/TSV/JSON  | —                                   |
+| `cosmemilton-report`        | Core headless, server-safe, sem imports de dependências em runtime: `defineReport`, `resolveReport`, formatters, registry, storage adapters (memória/localStorage), serializers CSV/TSV/JSON  | —                                   |
 | `cosmemilton-report/pdf`    | `createReportDocument`, `renderReportToBuffer`, `renderReportToStream`, `registerReportFonts`, reexport de `Text`/`View`/`StyleSheet`/`Image`                    | `@react-pdf/renderer`               |
 | `cosmemilton-report/xlsx`   | `exportReportToXlsx`                                                                                                                                             | `exceljs`                           |
 | `cosmemilton-report/client` | Hooks (`useReportExport`, `useReportViews`, `useReportDefinitions`) + `CmReportLayoutEditor`, `CmReportPdfPreview`, `CmReportDesigner` (arquivos `"use client"`) | `cosmemilton-ui` + `@iconify/react` |
@@ -465,6 +466,88 @@ const cupom = await renderReportToBuffer({
 
 Para cupons estreitos, escolha poucas colunas e rótulos curtos. A largura do PDF é a largura
 nominal do papel; ajuste as margens à área imprimível da sua impressora.
+
+## Relatórios extensos no PDF
+
+As APIs do servidor selecionam automaticamente um **motor tabular com PDFKit** para listas
+compatíveis, em Node 20 ou superior. Esse caminho usa o mesmo dataset e preserva os valores
+formatados, as colunas visíveis e os totais. Recursos que exigem o layout React continuam no
+React PDF: células personalizadas, fontes próprias, logotipos, agrupamentos, sumários ou
+seções com componentes/estilos fora do subconjunto tabular suportado.
+
+O caminho tabular pode mudar as quebras de página em relação ao React. Seções verticais que
+cabem em uma página são mantidas inteiras; se forem maiores, o relatório volta ao React.
+Use `engine: "react-pdf"` quando precisar conservar o motor de layout anterior.
+
+Em A4/Letter, a tabela é dividida em **blocos de até 100 linhas**. Cada bloco começa em uma
+página nova e pode ocupar várias páginas, conforme a altura real das linhas. Isso pode deixar
+espaço livre no final de um bloco e mudar a quantidade de páginas em relação à paginação
+contínua. O limite também reduz o trabalho de paginação quando o React PDF é necessário.
+
+Os dados e totais são calculados uma única vez. Grupos, subtotais, total geral, seções e
+sumário mantêm sua ordem e não são duplicados entre blocos. Cabeçalhos e numeração de páginas
+continuam globais. As bobinas de 58/80 mm permanecem contínuas.
+
+As três APIs do entry `/pdf` aceitam um segundo argumento opcional, `ReportPdfOptions`:
+
+```ts
+import { renderReportToBuffer, type ReportPdfOptions } from "cosmemilton-report/pdf";
+
+const options: ReportPdfOptions = { engine: "auto", maxRowsPerBlock: 100 }; // padrões
+const buffer = await renderReportToBuffer({ definition: relatorioVendas, rows }, options);
+
+// Também disponível em createReportDocument(input, options) e
+// renderReportToStream(input, options).
+// engine: "react-pdf" força o motor React nas APIs do servidor.
+// maxRowsPerBlock: false restaura a paginação contínua anterior.
+```
+
+`maxRowsPerBlock` aceita um inteiro positivo ou `false`; valores inválidos geram `RangeError`.
+O limite conta linhas de dados, não linhas de texto ou páginas. Blocos menores reduzem a
+quantidade de conteúdo repaginado, mas podem aumentar o espaço livre entre blocos.
+
+Para preservar conteúdo que depende do documento completo, seções ou células com `fixed`,
+`render` dinâmico, destinos internos, bookmarks ou componentes React próprios mantêm a
+paginação contínua, mesmo quando um limite foi informado. A biblioteca não executa componentes
+React próprios fora do renderizador para inspecionar seus descendentes. Relatórios sem
+colunas visíveis também mantêm um único bloco.
+
+Quando o motor React é necessário, `renderReportToBuffer` e `renderReportToStream` renderizam
+os blocos em sequência, unem suas páginas com `pdf-lib` e acrescentam os rodapés com a
+numeração global. Assim, o React PDF processa apenas um bloco da tabela por vez. A formatação
+e as fontes do rodapé continuam sendo renderizadas pelo React PDF.
+
+O dataset e o PDF final ainda ficam em memória; mantenha limites de concorrência, memória e
+tempo no servidor. Quando há vários blocos, o stream só fica disponível depois da montagem
+completa do PDF. `createReportDocument` sempre entrega uma árvore React para o navegador ou
+renderização customizada, independentemente de `engine`; para grandes volumes, use as APIs
+do servidor. Node 18 continua suportado pelo caminho React.
+
+Para medir uma instalação da biblioteca com dados sintéticos semelhantes a uma lista de
+produtos do SRI, execute no repositório:
+
+```bash
+npm run build
+npm run benchmark:pdf -- --rows 1000,7833,10000 --validation text --output-dir tmp/benchmark
+```
+
+O benchmark usa um worker por vez, limite de heap de 512 MiB e timeout de 110 segundos. Registra
+preparação, renderização, memória observada, erros originais e valida o PDF lendo todos os
+códigos, sua ordem e o total. Use `--help` para comparar módulos ou tamanhos de bloco.
+
+Medição de referência em 13/09/2026, Ubuntu 24.04/WSL, Node 24.15.0, um worker por vez e
+fixture `realistic-products-v2` (nove colunas preenchidas, A4 paisagem):
+
+| Produtos | Geração pela API | Incluindo inicialização do worker | Páginas |
+| ---: | ---: | ---: | ---: |
+| 1.000 | 0,80 s | 1,22 s | 30 |
+| 7.833 | 4,64 s | 5,14 s | 235 |
+| 10.000 | 6,10 s | 9,39 s | 300 |
+
+Todos os códigos foram conferidos, em ordem, sem duplicação do total e com numeração global
+correta. O maior heap observado do worker foi 293 MiB. Esses tempos incluem formatação e
+montagem do PDF; não incluem consulta ao banco, transporte HTTP ou a validação textual feita
+pelo benchmark. Dados, estilos e capacidade do servidor afetam o resultado.
 
 ## Fontes no PDF
 

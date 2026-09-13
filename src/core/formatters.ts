@@ -1,6 +1,45 @@
 // Formatação de valores de célula usando Intl nativo (pt-BR/BRL por default).
 import type { ReportCellValue, ReportFormat, ReportFormatOptions } from "./types.js";
 
+// Um relatório usa a mesma formatação em milhares de células. Evita recriar o
+// formatter Intl a cada valor, mantendo um limite para configurações por usuário.
+const numberFormats = new Map<string, Intl.NumberFormat>();
+const MAX_NUMBER_FORMATS = 64;
+
+function numberFormat(
+  format: "currency" | "number" | "integer" | "percent",
+  locale: string,
+  currency: string,
+  decimals: number,
+): Intl.NumberFormat {
+  const key = JSON.stringify([
+    format,
+    locale,
+    format === "currency" ? currency : format === "integer" ? 0 : decimals,
+  ]);
+  const cached = numberFormats.get(key);
+  if (cached) {
+    numberFormats.delete(key);
+    numberFormats.set(key, cached);
+    return cached;
+  }
+  const formatter = new Intl.NumberFormat(
+    locale,
+    format === "currency"
+      ? { style: "currency", currency }
+      : {
+          ...(format === "percent" ? { style: "percent" } : {}),
+          minimumFractionDigits: format === "integer" ? 0 : decimals,
+          maximumFractionDigits: format === "integer" ? 0 : decimals,
+        },
+  );
+  if (numberFormats.size >= MAX_NUMBER_FORMATS) {
+    numberFormats.delete(numberFormats.keys().next().value!);
+  }
+  numberFormats.set(key, formatter);
+  return formatter;
+}
+
 /** Converte um valor de célula em número finito, ou `null` quando não é numérico.
  *  Exportado para reuso por `summary.ts`/`dataset.ts` — evita reimplementar a mesma coerção. */
 export function toNumber(value: ReportCellValue): number | null {
@@ -79,32 +118,22 @@ export function formatValue(
     case "currency": {
       const n = toNumber(value);
       if (n === null) return "";
-      return new Intl.NumberFormat(locale, { style: "currency", currency }).format(n);
+      return numberFormat(format, locale, currency, decimals).format(n);
     }
     case "number": {
       const n = toNumber(value);
       if (n === null) return "";
-      return new Intl.NumberFormat(locale, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      }).format(n);
+      return numberFormat(format, locale, currency, decimals).format(n);
     }
     case "integer": {
       const n = toNumber(value);
       if (n === null) return "";
-      return new Intl.NumberFormat(locale, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(n);
+      return numberFormat(format, locale, currency, decimals).format(n);
     }
     case "percent": {
       const n = toNumber(value);
       if (n === null) return "";
-      return new Intl.NumberFormat(locale, {
-        style: "percent",
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      }).format(n);
+      return numberFormat(format, locale, currency, decimals).format(n);
     }
     case "date": {
       const date = parseDateValue(value);
