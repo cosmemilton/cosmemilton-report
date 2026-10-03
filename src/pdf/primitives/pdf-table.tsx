@@ -5,7 +5,7 @@
 // Recebe um bloco do fluxo visual, com referências às linhas originais e às células do
 // dataset completo. A paginação não recalcula agrupamentos, subtotais nem totais.
 import { Text, View } from "@react-pdf/renderer";
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement } from "react";
 import type { ReportDatasetCell, ResolvedReport, ResolvedReportColumn } from "../../core/types.js";
 import { widthPct } from "../map-columns.js";
 import type { ReportPdfTableBlock } from "../table-blocks.js";
@@ -161,48 +161,74 @@ export function ReportPdfTable<T>({ resolved, block }: ReportPdfTableProps<T>): 
   const { style, visibleColumns: columns } = resolved;
   const padding = DENSITY_PADDING[style.density];
   const showGridLines = style.showGridLines;
+  // A quebra precisa estar na tabela irmã da anterior, diretamente no fluxo da
+  // Page. React PDF não propaga break de uma linha aninhada dentro de uma View.
+  // A moldura de colunas continua restrita à tabela, sem aparecer em páginas que
+  // contenham somente sections. Todos os segmentos usam o mesmo contexto global.
+  const segments: ReportPdfTableBlock<T>["entries"][] = [[]];
+  for (const entry of block.entries) {
+    if ("breakBefore" in entry && entry.breakBefore && segments.at(-1)!.length > 0) {
+      segments.push([]);
+    }
+    segments.at(-1)!.push(entry);
+  }
 
   return (
-    <View>
-      {/* `fixed` permanece no fluxo da tabela e é copiado quando ela continua em outra
+    <Fragment>
+      {segments.map((entries, segmentIndex) => (
+        <View key={segmentIndex} break={segmentIndex > 0}>
+          {/* `fixed` permanece no fluxo da tabela e é copiado quando ela continua em outra
           página. Sem posicionamento absoluto, a moldura do relatório reserva seu espaço
           acima dele; sections fora da tabela não recebem cabeçalhos de coluna. */}
-      <HeaderRow columns={columns} style={style} padding={padding} showGridLines={showGridLines} />
-
-      {block.entries.map((entry) => {
-        if (entry.kind === "group") {
-          return (
-            <View key={entry.key} style={{ backgroundColor: GROUP_BG_COLOR, padding }} wrap={false}>
-              <Text style={{ fontSize: style.fontSize, fontWeight: "bold" }}>{entry.label}</Text>
-            </View>
-          );
-        }
-        if (entry.kind === "aggregate") {
-          return (
-            <AggregateRow
-              key={entry.key}
-              columns={columns}
-              aggregate={entry.cells}
-              label={entry.label}
-              style={style}
-              padding={padding}
-              showGridLines={showGridLines}
-            />
-          );
-        }
-        return (
-          <DataRow
-            key={entry.key}
-            cells={entry.cells}
-            renderedCells={entry.renderedCells}
-            index={entry.index}
+          <HeaderRow
             columns={columns}
             style={style}
             padding={padding}
             showGridLines={showGridLines}
           />
-        );
-      })}
-    </View>
+
+          {entries.map((entry) => {
+            if (entry.kind === "group") {
+              return (
+                <View
+                  key={entry.key}
+                  style={{ backgroundColor: GROUP_BG_COLOR, padding }}
+                  wrap={false}
+                >
+                  <Text style={{ fontSize: style.fontSize, fontWeight: "bold" }}>
+                    {entry.label}
+                  </Text>
+                </View>
+              );
+            }
+            if (entry.kind === "aggregate") {
+              return (
+                <AggregateRow
+                  key={entry.key}
+                  columns={columns}
+                  aggregate={entry.cells}
+                  label={entry.label}
+                  style={style}
+                  padding={padding}
+                  showGridLines={showGridLines}
+                />
+              );
+            }
+            return (
+              <DataRow
+                key={entry.key}
+                cells={entry.cells}
+                renderedCells={entry.renderedCells}
+                index={entry.index}
+                columns={columns}
+                style={style}
+                padding={padding}
+                showGridLines={showGridLines}
+              />
+            );
+          })}
+        </View>
+      ))}
+    </Fragment>
   );
 }

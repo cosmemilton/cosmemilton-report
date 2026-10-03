@@ -11,9 +11,11 @@ type DataEntry<T> = {
   renderedCells?: (ReactElement | undefined)[];
   /** Índice no relatório completo, usado para manter a zebra entre blocos e grupos. */
   index: number;
+  /** Quebra explícita preservada quando o layout requer fluxo contínuo. */
+  breakBefore?: boolean;
 };
 
-type GroupEntry = { kind: "group"; key: string; label: string };
+type GroupEntry = { kind: "group"; key: string; label: string; breakBefore?: boolean };
 type AggregateEntry = {
   kind: "aggregate";
   key: string;
@@ -34,17 +36,21 @@ export function buildReportPdfTableBlocks<T>(
   rows: T[],
   dataset: ReportDataset,
   maxRowsPerBlock: number | false,
+  breakBeforeRow?: (row: T, index: number) => boolean,
 ): ReportPdfTableBlock<T>[] {
   const blocks: ReportPdfTableBlock<T>[] = [{ entries: [] }];
   let block = blocks[0];
   let blockRowCount = 0;
   let rowIndex = 0;
+  // Sem tabela visível, somente sections compõem o documento; não introduzir
+  // páginas vazias por fronteiras de dados que não serão impressos.
+  const rowBreak = resolved.visibleColumns.length > 0 ? breakBeforeRow : undefined;
 
-  function prepareRow(): void {
+  function prepareRow(requestedBreak: boolean): void {
     if (
       maxRowsPerBlock !== false &&
-      resolved.visibleColumns.length > 0 &&
-      blockRowCount >= maxRowsPerBlock
+      ((requestedBreak && block.entries.length > 0) ||
+        (resolved.visibleColumns.length > 0 && blockRowCount >= maxRowsPerBlock))
     ) {
       block = { entries: [] };
       blocks.push(block);
@@ -52,8 +58,15 @@ export function buildReportPdfTableBlocks<T>(
     }
   }
 
-  function appendRow(row: T, cells: ReportDatasetCell[]): void {
-    block.entries.push({ kind: "row", key: `row-${rowIndex}`, row, cells, index: rowIndex });
+  function appendRow(row: T, cells: ReportDatasetCell[], breakBefore: boolean): void {
+    block.entries.push({
+      kind: "row",
+      key: `row-${rowIndex}`,
+      row,
+      cells,
+      index: rowIndex,
+      ...(breakBefore ? { breakBefore: true } : {}),
+    });
     rowIndex += 1;
     blockRowCount += 1;
   }
@@ -65,15 +78,17 @@ export function buildReportPdfTableBlocks<T>(
     groups.forEach((group, groupIndex) => {
       const datasetGroup = dataset.groups?.[groupIndex];
       group.rows.forEach((row, index) => {
-        prepareRow();
+        const requestedBreak = Boolean(rowBreak?.(row, rowIndex)) && rowIndex > 0;
+        prepareRow(requestedBreak);
         if (index === 0) {
           block.entries.push({
             kind: "group",
             key: `group-${groupIndex}`,
             label: datasetGroup?.label ?? group.label,
+            ...(requestedBreak ? { breakBefore: true } : {}),
           });
         }
-        appendRow(row, datasetGroup?.rows[index]?.cells ?? []);
+        appendRow(row, datasetGroup?.rows[index]?.cells ?? [], index > 0 && requestedBreak);
       });
       if (datasetGroup?.subtotal) {
         block.entries.push({
@@ -86,8 +101,9 @@ export function buildReportPdfTableBlocks<T>(
     });
   } else {
     dataset.rows.forEach((item, index) => {
-      prepareRow();
-      appendRow(rows[index], item.cells);
+      const requestedBreak = Boolean(rowBreak?.(rows[index], rowIndex)) && rowIndex > 0;
+      prepareRow(requestedBreak);
+      appendRow(rows[index], item.cells, requestedBreak);
     });
   }
 
