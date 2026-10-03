@@ -18,7 +18,7 @@ type ReportPdfDocumentElement = Parameters<typeof renderToBuffer>[0];
 
 const FOOTER_PAGES_PER_BATCH = 50;
 
-function copyMetadata(source: PDFDocument, target: PDFDocument): void {
+export function copyMetadata(source: PDFDocument, target: PDFDocument): void {
   const title = source.getTitle();
   const author = source.getAuthor();
   const subject = source.getSubject();
@@ -38,7 +38,10 @@ function copyMetadata(source: PDFDocument, target: PDFDocument): void {
 }
 
 /** Mantém apenas um bloco de layout React/Yoga ativo; não cria uma árvore de todas as páginas. */
-async function renderBlocks<T>(report: PreparedReportPdf<T>): Promise<Uint8Array> {
+async function renderBlocks<T>(
+  report: PreparedReportPdf<T>,
+  renderFooter = true,
+): Promise<Uint8Array> {
   const { PDFDocument } = await import("pdf-lib");
   const merged = await PDFDocument.create();
 
@@ -54,9 +57,34 @@ async function renderBlocks<T>(report: PreparedReportPdf<T>): Promise<Uint8Array
     for (const page of copied) merged.addPage(page);
   }
 
+  if (renderFooter) await applyPreparedReportFooters(merged, report);
+  return merged.save({ addDefaultPage: false });
+}
+
+/** Reutilizado pela composição: conteúdo paginado existente, sem rodapé local. */
+export async function renderPreparedReportWithoutFooter<T>(
+  report: PreparedReportPdf<T>,
+  options?: ReportPdfOptions<T>,
+): Promise<Uint8Array> {
+  if (options?.engine !== "react-pdf" && options?.maxRowsPerBlock !== false) {
+    const native = await renderNativeReportToBuffer(report, { renderFooter: false });
+    if (native) return native;
+  }
+  return renderBlocks(report, false);
+}
+
+/** Rodapé original sobre páginas físicas; contador do documento completo. */
+export async function applyPreparedReportFooters<T>(
+  merged: PDFDocument,
+  report: PreparedReportPdf<T>,
+  pageOffset = 0,
+  pageCount = merged.getPageCount(),
+): Promise<void> {
+  const { PDFDocument } = await import("pdf-lib");
   // A altura real já foi resolvida pelo renderer. Reusar o próprio rodapé React mantém
   // fonte customizada, Unicode, alinhamento e margens; não substitui a fonte por Helvetica.
-  const pages = merged.getPages();
+  const totalPages = merged.getPageCount();
+  const pages = merged.getPages().slice(pageOffset, pageOffset + pageCount);
   for (let start = 0; start < pages.length; start += FOOTER_PAGES_PER_BATCH) {
     const batch = pages.slice(start, start + FOOTER_PAGES_PER_BATCH);
     const document = createReportFooterDocument(
@@ -65,9 +93,9 @@ async function renderBlocks<T>(report: PreparedReportPdf<T>): Promise<Uint8Array
       batch.map((page, index) => ({
         width: page.getWidth(),
         height: page.getHeight(),
-        pageNumber: start + index + 1,
+        pageNumber: pageOffset + start + index + 1,
       })),
-      pages.length,
+      totalPages,
     ) as ReportPdfDocumentElement;
     const bytes = await renderToBuffer(document);
     const overlay = await PDFDocument.load(bytes, { updateMetadata: false });
@@ -86,7 +114,6 @@ async function renderBlocks<T>(report: PreparedReportPdf<T>): Promise<Uint8Array
       });
     }
   }
-  return merged.save({ addDefaultPage: false });
 }
 
 /** Renderiza PDF no servidor. Relatórios em blocos usam renderização sequencial e merge. */

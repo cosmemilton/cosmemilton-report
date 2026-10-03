@@ -1,5 +1,11 @@
 # cosmemilton-report
 
+## 0.6.0
+
+### Minor Changes
+
+- Add public PDF composition for heterogeneous report definitions: `createCompositeReportDocument`, `renderCompositeReportToBuffer`, and `renderCompositeReportToStream`. Each report starts a new page, preserves its own columns, header, paper geometry, summary and footer, and shares a global page count. Server composition reuses the existing auto renderer selection, block pagination and footer overlay; document-scoped React content stays in one continuous document. Existing single-report APIs are preserved.
+
 ## 0.5.0
 
 ### Minor Changes

@@ -123,7 +123,7 @@ export function prepareReportPdf<T>(
 /** Constrói o documento completo ou um único bloco, sem repetir a preparação. */
 export function createPreparedReportDocument<T>(
   report: PreparedReportPdf<T>,
-  options: { blockIndex?: number; renderFooter?: boolean } = {},
+  options: { blockIndex?: number; renderFooter?: boolean; wrapDocument?: boolean } = {},
 ): ReactElement {
   const {
     resolved,
@@ -148,6 +148,7 @@ export function createPreparedReportDocument<T>(
       userName={userName}
       footerText={footerText}
       renderFooter={options.renderFooter}
+      wrapDocument={options.wrapDocument}
       blocks={selectedBlocks.map(({ block, index }) => (
         <Fragment key={index}>
           {index === 0 ? beforeTable : null}

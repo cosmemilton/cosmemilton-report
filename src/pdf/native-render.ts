@@ -22,6 +22,7 @@ const MAX_CACHED_MEASUREMENTS = 4096;
 /** Node 20+ only; null selects the existing React path with the same prepared data. */
 export async function renderNativeReportToBuffer<T>(
   report: PreparedReportPdf<T>,
+  options: { renderFooter?: boolean } = {},
 ): Promise<Uint8Array | null> {
   if (typeof process === "undefined" || Number.parseInt(process.versions.node, 10) < 20)
     return null;
@@ -402,7 +403,11 @@ export async function renderNativeReportToBuffer<T>(
     font(footerSize);
     const footerHeight = doc.currentLineHeight(true);
     const footerY = pageHeight - Math.max(margins.bottom - 16, 8) - footerHeight;
-    for (let index = range.start; index < range.start + range.count; index += 1) {
+    for (
+      let index = range.start;
+      options.renderFooter !== false && index < range.start + range.count;
+      index += 1
+    ) {
       doc.switchToPage(index);
       line(footerY - 4.25, "#d1d5db", 0.5);
       drawText(
