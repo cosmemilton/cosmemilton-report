@@ -92,7 +92,7 @@ async function renderBlocks<T>(report: PreparedReportPdf<T>): Promise<Uint8Array
 /** Renderiza PDF no servidor. Relatórios em blocos usam renderização sequencial e merge. */
 export async function renderReportToBuffer<T>(
   input: ReportRenderInput<T>,
-  options?: ReportPdfOptions,
+  options?: ReportPdfOptions<T>,
 ): Promise<Uint8Array> {
   const report = prepareReportPdf(input, options);
   if (options?.engine !== "react-pdf" && options?.maxRowsPerBlock !== false) {
@@ -110,7 +110,7 @@ export async function renderReportToBuffer<T>(
  */
 export async function renderReportToStream<T>(
   input: ReportRenderInput<T>,
-  options?: ReportPdfOptions,
+  options?: ReportPdfOptions<T>,
 ): Promise<NodeJS.ReadableStream> {
   const report = prepareReportPdf(input, options);
   const native =

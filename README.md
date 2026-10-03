@@ -138,13 +138,13 @@ Prontos para explorar mais: [`examples/04-editor-localstorage.tsx`](./examples/0
 
 ## Entries
 
-| Entry                       | Conteúdo                                                                                                                                                         | Peer necessário                     |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `cosmemilton-report`        | Core headless, server-safe, sem imports de dependências em runtime: `defineReport`, `resolveReport`, formatters, registry, storage adapters (memória/localStorage), serializers CSV/TSV/JSON  | —                                   |
-| `cosmemilton-report/pdf`    | `createReportDocument`, `renderReportToBuffer`, `renderReportToStream`, `registerReportFonts`, reexport de `Text`/`View`/`StyleSheet`/`Image`                    | `@react-pdf/renderer`               |
-| `cosmemilton-report/xlsx`   | `exportReportToXlsx`                                                                                                                                             | `exceljs`                           |
-| `cosmemilton-report/client` | Hooks (`useReportExport`, `useReportViews`, `useReportDefinitions`) + `CmReportLayoutEditor`, `CmReportPdfPreview`, `CmReportDesigner` (arquivos `"use client"`) | `cosmemilton-ui` + `@iconify/react` |
-| `cosmemilton-report/next`   | `reportResponse`, `renderReportResponse` — helpers de route handler (`Response` padrão Web)                                                                      | — (`next` é só semântico)           |
+| Entry                       | Conteúdo                                                                                                                                                                                     | Peer necessário                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `cosmemilton-report`        | Core headless, server-safe, sem imports de dependências em runtime: `defineReport`, `resolveReport`, formatters, registry, storage adapters (memória/localStorage), serializers CSV/TSV/JSON | —                                   |
+| `cosmemilton-report/pdf`    | `createReportDocument`, `renderReportToBuffer`, `renderReportToStream`, `registerReportFonts`, reexport de `Text`/`View`/`StyleSheet`/`Image`                                                | `@react-pdf/renderer`               |
+| `cosmemilton-report/xlsx`   | `exportReportToXlsx`                                                                                                                                                                         | `exceljs`                           |
+| `cosmemilton-report/client` | Hooks (`useReportExport`, `useReportViews`, `useReportDefinitions`) + `CmReportLayoutEditor`, `CmReportPdfPreview`, `CmReportDesigner` (arquivos `"use client"`)                             | `cosmemilton-ui` + `@iconify/react` |
+| `cosmemilton-report/next`   | `reportResponse`, `renderReportResponse` — helpers de route handler (`Response` padrão Web)                                                                                                  | — (`next` é só semântico)           |
 
 ## Server ou client?
 
@@ -506,6 +506,31 @@ const buffer = await renderReportToBuffer({ definition: relatorioVendas, rows },
 O limite conta linhas de dados, não linhas de texto ou páginas. Blocos menores reduzem a
 quantidade de conteúdo repaginado, mas podem aumentar o espaço livre entre blocos.
 
+Para iniciar uma página em uma fronteira comercial, use o callback opcional e tipado
+`breakBeforeRow` nas mesmas três APIs. A biblioteca conserva o documento completo, os
+cabeçalhos, os subtotais e a numeração global; a aplicação não precisa combinar PDFs.
+
+```ts
+type Linha = { codigo: string; iniciarPagina: boolean };
+const options: ReportPdfOptions<Linha> = {
+  engine: "auto",
+  breakBeforeRow: (linha) => linha.iniciarPagina,
+};
+const buffer = await renderReportToBuffer({ definition, rows }, options);
+```
+
+O callback recebe a referência original e o índice na ordem visual (após agrupar, quando
+há `definition.group`), uma vez por linha de dados. Sem colunas visíveis, não é executado
+e as fronteiras dos dados ocultos não criam páginas. A primeira linha nunca cria uma
+página vazia; uma quebra coincidente com o limite do bloco também não duplica páginas.
+`maxRowsPerBlock: false` remove somente as quebras pelo limite, mantendo as explícitas.
+Conteúdo React dinâmico conserva as quebras no mesmo contexto global. `engine: "auto"`
+continua escolhendo PDFKit para tabelas compatíveis ou React PDF quando necessário.
+Em bobinas58/80mm, informar `breakBeforeRow` gera `RangeError` antes de executar o
+callback: a biblioteca preserva a altura automática e não simula corte físico. O callback
+é configuração confiável da aplicação, separado de definições/views serializáveis e dos
+dados comerciais. CSV/XLSX e o resultado dos cálculos permanecem iguais.
+
 Para preservar conteúdo que depende do documento completo, seções ou células com `fixed`,
 `render` dinâmico, destinos internos, bookmarks ou componentes React próprios mantêm a
 paginação contínua, mesmo quando um limite foi informado. A biblioteca não executa componentes
@@ -539,10 +564,10 @@ Medição de referência em 13/09/2026, Ubuntu 24.04/WSL, Node 24.15.0, um worke
 fixture `realistic-products-v2` (nove colunas preenchidas, A4 paisagem):
 
 | Produtos | Geração pela API | Incluindo inicialização do worker | Páginas |
-| ---: | ---: | ---: | ---: |
-| 1.000 | 0,80 s | 1,22 s | 30 |
-| 7.833 | 4,64 s | 5,14 s | 235 |
-| 10.000 | 6,10 s | 9,39 s | 300 |
+| -------: | ---------------: | --------------------------------: | ------: |
+|    1.000 |           0,80 s |                            1,22 s |      30 |
+|    7.833 |           4,64 s |                            5,14 s |     235 |
+|   10.000 |           6,10 s |                            9,39 s |     300 |
 
 Todos os códigos foram conferidos, em ordem, sem duplicação do total e com numeração global
 correta. O maior heap observado do worker foi 293 MiB. Esses tempos incluem formatação e

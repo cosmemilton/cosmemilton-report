@@ -42,7 +42,7 @@ export type PreparedReportPdf<T> = {
  */
 export function createReportDocument<T>(
   input: ReportRenderInput<T>,
-  options?: ReportPdfOptions,
+  options?: ReportPdfOptions<T>,
 ): ReactElement {
   return createPreparedReportDocument(prepareReportPdf(input, options));
 }
@@ -50,7 +50,7 @@ export function createReportDocument<T>(
 /** Preparação compartilhada: dados, seções e callbacks customizados são avaliados uma vez. */
 export function prepareReportPdf<T>(
   input: ReportRenderInput<T>,
-  options?: ReportPdfOptions,
+  options?: ReportPdfOptions<T>,
 ): PreparedReportPdf<T> {
   const { definition, rows, globalConfig, view, overrides, userName } = input;
   const generatedAt = input.generatedAt ?? new Date();
@@ -59,6 +59,9 @@ export function prepareReportPdf<T>(
   const resolved = resolveReport({ definition, globalConfig, view, overrides });
   const dataset = buildReportDataset(resolved, rows, { userName, generatedAt });
   const thermal = resolved.page.paperSize === "58mm" || resolved.page.paperSize === "80mm";
+  if (thermal && options?.breakBeforeRow !== undefined) {
+    throw new RangeError("breakBeforeRow requer papel A4 ou Letter; bobinas têm altura automática");
+  }
 
   const sectionCtx: ReportSectionContext<T> = { rows, resolved, generatedAt, userName };
   const beforeTable = resolved.sections
@@ -77,6 +80,7 @@ export function prepareReportPdf<T>(
     rows,
     dataset,
     continuous ? false : maxRowsPerBlock,
+    options?.breakBeforeRow,
   );
 
   if (resolved.visibleColumns.some((column) => column.pdfRender)) {

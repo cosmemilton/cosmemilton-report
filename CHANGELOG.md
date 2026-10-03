@@ -1,5 +1,19 @@
 # cosmemilton-report
 
+## 0.5.0
+
+### Minor Changes
+
+- Adiciona `ReportPdfOptions<T>.breakBeforeRow(row, index)` às APIs de PDF. O callback
+  inicia uma nova página em fronteiras comerciais, preservando referências originais,
+  cabeçalhos, subtotais, totais e numeração global. Reutiliza os blocos existentes no
+  motor automático PDFKit/React e mantém as quebras explícitas no fluxo contínuo, inclusive
+  com conteúdo React dinâmico. Não exige compor documentos na aplicação.
+
+  Callbacks são avaliados uma vez por linha, na ordem visual; a primeira linha e limites
+  coincidentes não geram páginas vazias. Sem callback, o comportamento anterior é mantido.
+  Bobinas58/80mm rejeitam a opção explicitamente para preservar a altura automática.
+
 ## 0.4.0
 
 ### Minor Changes

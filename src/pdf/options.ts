@@ -1,5 +1,5 @@
 /** Opções de renderização PDF; não alteram dados, filtros ou configuração persistida. */
-export type ReportPdfOptions = {
+export type ReportPdfOptions<T = unknown> = {
   /**
    * APIs servidor: auto usa PDFKit em Node 20+ para tabelas/sections suportadas,
    * com fallback React para os demais relatórios. react-pdf força o renderer React.
@@ -15,11 +15,24 @@ export type ReportPdfOptions = {
    * opacos também mantêm o fluxo contínuo para preservar seu contexto de documento.
    */
   maxRowsPerBlock?: number | false;
+  /**
+   * Inicia uma nova página antes da linha indicada, mantendo a numeração global.
+   * Avaliado uma vez por linha, na ordem visual, com o índice global e a referência
+   * original. A primeira linha nunca gera uma página vazia. As quebras explícitas
+   * também funcionam com maxRowsPerBlock:false ou conteúdo React contínuo.
+   * Requer A4/Letter; bobinas rejeitam esta opção para preservar a altura automática.
+   * Callback confiável da aplicação: não pertence à configuração serializável.
+   * Sem colunas visíveis, não é executado e não cria páginas para dados ocultos.
+   */
+  breakBeforeRow?: (row: T, index: number) => boolean;
 };
 
 const DEFAULT_MAX_ROWS_PER_BLOCK = 100;
 
-export function resolveMaxRowsPerBlock(options?: ReportPdfOptions): number | false {
+export function resolveMaxRowsPerBlock<T>(options?: ReportPdfOptions<T>): number | false {
+  if (options?.breakBeforeRow !== undefined && typeof options.breakBeforeRow !== "function") {
+    throw new TypeError("breakBeforeRow deve ser uma função");
+  }
   if (
     options?.engine !== undefined &&
     options.engine !== "auto" &&
