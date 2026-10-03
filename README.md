@@ -646,6 +646,39 @@ exportReportToTsv({ definition: relatorioVendas, rows }, { escapeFormulas: false
 
 Ao desativá-la, o consumidor passa a ser responsável pela interpretação desses textos.
 
+## PDF com mais de uma tabela
+
+As APIs `createCompositeReportDocument`, `renderCompositeReportToBuffer` e
+`renderCompositeReportToStream`, exportadas por `cosmemilton-report/pdf`, recebem
+uma tupla de `ReportRenderInput` com tipos de linha diferentes. Cada relatório
+começa em uma nova página e conserva suas colunas, agrupamentos, resumo,
+cabeçalho, rodapé, orientação e papel. A numeração considera o documento inteiro.
+
+```ts
+import { renderCompositeReportToBuffer } from "cosmemilton-report/pdf";
+
+const pdf = await renderCompositeReportToBuffer(
+  [
+    { definition: movimentos, rows: linhasMovimento, globalConfig: { paperSize: "A4" } },
+    { definition: bancos, rows: linhasBanco, globalConfig: { paperSize: "A4" } },
+  ],
+  { engine: "auto" },
+);
+```
+
+O compositor reutiliza os motores e os blocos existentes. No servidor, `auto`
+seleciona o motor apropriado para cada parte; tabelas nativas e React podem
+compartilhar o documento. Seções ou células com destinos internos, componentes
+opacos ou conteúdo dependente de `pageNumber`/`totalPages` usam uma única árvore
+React para conservar o contexto entre partes. A árvore pública também compartilha
+esse contexto e pode ser usada com `pdf(document).toBlob()`.
+
+O compositor aceita A4 e Letter, inclusive com geometrias diferentes no mesmo
+documento. Uma lista vazia ou bobinas recebem diagnóstico; as APIs de relatório
+único continuam oferecendo bobinas. `maxRowsPerBlock` é aplicado a cada tabela e
+não redefine seus dados nem seus totais. Definições, caminhos de fontes e
+callbacks devem continuar vindo de código confiável da aplicação.
+
 ## Limitações v1
 
 - Sem drag-and-drop no editor/designer — reordenar colunas usa botões subir/descer.

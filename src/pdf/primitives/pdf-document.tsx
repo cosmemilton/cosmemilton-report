@@ -19,6 +19,8 @@ export type ReportPdfDocumentProps<T> = {
   /** Cada bloco inicia um Page; o renderer pode subdividi-lo conforme a altura real. */
   blocks: ReactNode[];
   renderFooter?: boolean;
+  /** A composição usa as páginas desta moldura dentro do Document único. */
+  wrapDocument?: boolean;
 };
 
 function pageStyle<T>(resolved: ResolvedReport<T>) {
@@ -83,6 +85,7 @@ export function ReportPdfDocument<T>({
   footerText,
   blocks,
   renderFooter = true,
+  wrapDocument = true,
 }: ReportPdfDocumentProps<T>): ReactElement {
   const { header, branding, page, style, title, subtitle } = resolved;
   const thermal = page.paperSize === "58mm" || page.paperSize === "80mm";
@@ -91,76 +94,73 @@ export function ReportPdfDocument<T>({
   const companyName =
     header.showCompanyName && branding.showCompanyName ? branding.companyName : undefined;
 
-  return (
-    <Document title={title}>
-      {blocks.map((content, index) => (
-        <Page
-          key={index}
-          size={paperSizeToReactPdf(page.paperSize)}
-          orientation={page.orientation}
-          wrap={!thermal}
-          style={pageStyle(resolved)}
-        >
-          <View
-            fixed
-            style={{
-              flexDirection: thermal ? "column" : "row",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              marginBottom: thermal ? 6 : 12,
-              paddingBottom: thermal ? 4 : 8,
-              borderBottomWidth: 1,
-              borderBottomColor: style.accentColor,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
-              {logoSrc ? (
-                <Image src={logoSrc} style={{ width: 32, height: 32, marginRight: 8 }} />
-              ) : null}
-              <View style={{ flexShrink: 1 }}>
-                <Text
-                  style={{
-                    fontSize: thermal ? 11 : 16,
-                    fontWeight: "bold",
-                    color: style.accentColor,
-                  }}
-                >
-                  {title}
-                </Text>
-                {subtitle ? (
-                  <Text style={{ fontSize: thermal ? 8 : 10, color: "#4b5563", marginTop: 2 }}>
-                    {subtitle}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-            <View
+  const pages = blocks.map((content, index) => (
+    <Page
+      key={index}
+      size={paperSizeToReactPdf(page.paperSize)}
+      orientation={page.orientation}
+      wrap={!thermal}
+      style={pageStyle(resolved)}
+    >
+      <View
+        fixed
+        style={{
+          flexDirection: thermal ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: thermal ? 6 : 12,
+          paddingBottom: thermal ? 4 : 8,
+          borderBottomWidth: 1,
+          borderBottomColor: style.accentColor,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
+          {logoSrc ? (
+            <Image src={logoSrc} style={{ width: 32, height: 32, marginRight: 8 }} />
+          ) : null}
+          <View style={{ flexShrink: 1 }}>
+            <Text
               style={{
-                alignItems: thermal ? "flex-start" : "flex-end",
-                marginTop: thermal ? 4 : 0,
+                fontSize: thermal ? 11 : 16,
+                fontWeight: "bold",
+                color: style.accentColor,
               }}
             >
-              {companyName ? (
-                <Text style={{ fontSize: style.fontSize, color: "#374151" }}>{companyName}</Text>
-              ) : null}
-              {header.showGeneratedAt ? (
-                <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
-                  Gerado em {formatGeneratedAt(generatedAt)}
-                </Text>
-              ) : null}
-              {header.showUserName && userName ? (
-                <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
-                  {userName}
-                </Text>
-              ) : null}
-            </View>
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text style={{ fontSize: thermal ? 8 : 10, color: "#4b5563", marginTop: 2 }}>
+                {subtitle}
+              </Text>
+            ) : null}
           </View>
+        </View>
+        <View
+          style={{
+            alignItems: thermal ? "flex-start" : "flex-end",
+            marginTop: thermal ? 4 : 0,
+          }}
+        >
+          {companyName ? (
+            <Text style={{ fontSize: style.fontSize, color: "#374151" }}>{companyName}</Text>
+          ) : null}
+          {header.showGeneratedAt ? (
+            <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
+              Gerado em {formatGeneratedAt(generatedAt)}
+            </Text>
+          ) : null}
+          {header.showUserName && userName ? (
+            <Text style={{ fontSize: style.fontSize, color: "#6b7280", marginTop: 2 }}>
+              {userName}
+            </Text>
+          ) : null}
+        </View>
+      </View>
 
-          {content}
+      {content}
 
-          {renderFooter ? <ReportPdfFooter resolved={resolved} footerText={footerText} /> : null}
-        </Page>
-      ))}
-    </Document>
-  );
+      {renderFooter ? <ReportPdfFooter resolved={resolved} footerText={footerText} /> : null}
+    </Page>
+  ));
+  return wrapDocument ? <Document title={title}>{pages}</Document> : <>{pages}</>;
 }
