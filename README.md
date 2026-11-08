@@ -1,11 +1,19 @@
-# cosmemilton-report
+# @cosmemilton/report
+
+## Migração para o escopo @cosmemilton
+
+O pacote passa a ser instalado como `@cosmemilton/report`. Atualize os imports e os caminhos CSS para o novo nome. As versões publicadas com os nomes antigos permanecem disponíveis; esta migração não remove nem deprecia esses pacotes.
+
+O entry `@cosmemilton/report/client` usa `@cosmemilton/ui >=4.1.0`. Para manter aplicações com `cosmemilton-ui@3`, continue usando `cosmemilton-report@0.6.0` e os imports antigos. A migração do entry client requer atualizar o UI e seu `CmToastProvider` juntos; não misture providers dos dois pacotes. Os entries de exportação sem UI continuam independentes desse peer opcional.
+
+Para publicar: publique primeiro o tarball validado de `@cosmemilton/ui@4.1.0`; depois valide `npm ci` e publique `@cosmemilton/report`. O lockfile aponta para esse artefato e sua integridade. Antes da publicação do UI, valide localmente com `npm install --no-save --package-lock=false ../cosmemilton-ui/cosmemilton-ui-4.1.0.tgz`. Não publique com dependências `file:`.
 
 Report builder React para Next.js: defina relatórios uma vez, em código, e exporte em **PDF**,
 **CSV**, **XLSX**, **JSON** e **TSV** — com editor visual de layout, designer para relatórios
 criados pelo usuário em runtime e configuração em camadas (defaults → global → definição → view →
 overrides por chamada).
 
-[![npm version](https://img.shields.io/npm/v/cosmemilton-report.svg)](https://www.npmjs.com/package/cosmemilton-report)
+[![npm version](https://img.shields.io/npm/v/@cosmemilton/report.svg)](https://www.npmjs.com/package/@cosmemilton/report)
 [![CI](https://github.com/cosmemilton/cosmemilton-report/actions/workflows/ci.yml/badge.svg)](https://github.com/cosmemilton/cosmemilton-report/actions/workflows/ci.yml)
 [![docs](https://img.shields.io/badge/docs-miltonjunior.dev.br-blue)](https://miltonjunior.dev.br/cosmemilton-report)
 
@@ -17,10 +25,10 @@ overrides por chamada).
 ## Instalação
 
 ```bash
-npm i cosmemilton-report
+npm i @cosmemilton/report
 ```
 
-O core (`cosmemilton-report`) não importa dependências em runtime e roda no server e no client.
+O core (`@cosmemilton/report`) não importa dependências em runtime e roda no server e no client.
 O pacote inclui `pdfkit` e `pdf-lib`, carregados apenas pela geração PDF no servidor. Os demais
 recursos dependem de peers **opcionais** — instale só o que for usar:
 
@@ -28,12 +36,12 @@ recursos dependem de peers **opcionais** — instale só o que for usar:
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@react-pdf/renderer` (`^4.3`)                 | entry `/pdf` (`renderReportToBuffer`, `createReportDocument`) e o preview do editor/designer         | Vai gerar ou pré-visualizar PDF                                                                                                                           |
 | `exceljs` (`^4.4`)                             | entry `/xlsx` (`exportReportToXlsx`)                                                                 | Vai exportar XLSX                                                                                                                                         |
-| `cosmemilton-ui` (`>=3.17`) + `@iconify/react` | entry `/client` (`useReportViews`, `CmReportLayoutEditor`, `CmReportDesigner`, `CmReportPdfPreview`) | Vai usar o editor/designer/preview em telas do seu app — o `CmSelect` do `cosmemilton-ui` usa `@iconify/react` internamente, então instale os dois juntos |
+| `@cosmemilton/ui` (`>=4.1.0`) + `@iconify/react` | entry `/client` (`useReportViews`, `CmReportLayoutEditor`, `CmReportDesigner`, `CmReportPdfPreview`) | Vai usar o editor/designer/preview em telas do seu app — o `CmSelect` do `@cosmemilton/ui` usa `@iconify/react` internamente, então instale os dois juntos |
 | `next` (`>=15`)                                | nada em runtime                                                                                      | Opcional/semântico: o entry `/next` só usa `Response`/`Headers` (Web API padrão), não importa nada de `next`                                              |
 
 **Uso só-servidor não precisa de nenhuma lib de UI.** Se você só gera CSV/PDF/XLSX dentro de um
 route handler (o caminho recomendado — veja [Server ou client?](#server-ou-client)), não instale
-`cosmemilton-ui` nem `@iconify/react`: eles só entram quando você usa o entry `/client` (editor,
+`@cosmemilton/ui` nem `@iconify/react`: eles só entram quando você usa o entry `/client` (editor,
 designer ou preview ao vivo em uma tela).
 
 ```bash
@@ -42,21 +50,21 @@ npm i @react-pdf/renderer
 # XLSX
 npm i exceljs
 # Editor/designer/preview (telas do app)
-npm i cosmemilton-ui @iconify/react
+npm i @cosmemilton/ui @iconify/react
 ```
 
 Os editores `CmReportLayoutEditor`, `CmReportDesigner` e `CmReportGlobalConfigEditor` precisam
-de um **`CmToastProvider` ancestral**, de `cosmemilton-ui/client`. Use o provider já existente
+de um **`CmToastProvider` ancestral**, de `@cosmemilton/ui/client`. Use o provider já existente
 no app ou adicione um acima da tela. Ele exibe validações, confirmações de salvar/duplicar,
 falhas de preview e feedback do upload do logotipo:
 
 ```tsx
 "use client";
 
-import { CmToastProvider } from "cosmemilton-ui/client";
-import { CmReportGlobalConfigEditor } from "cosmemilton-report/client";
-import "cosmemilton-ui/styles.css";
-import "cosmemilton-report/styles.css";
+import { CmToastProvider } from "@cosmemilton/ui/client";
+import { CmReportGlobalConfigEditor } from "@cosmemilton/report/client";
+import "@cosmemilton/ui/styles.css";
+import "@cosmemilton/report/styles.css";
 
 <CmToastProvider>
   <CmReportGlobalConfigEditor
@@ -75,7 +83,7 @@ O preview usado isoladamente mantém seu callback `onError` e dispensa o provide
 **1. Defina o relatório** ([`examples/01-minimo.ts`](./examples/01-minimo.ts)):
 
 ```ts
-import { defineReport } from "cosmemilton-report";
+import { defineReport } from "@cosmemilton/report";
 
 export type Venda = { data: string; cliente: string; total: number };
 
@@ -95,7 +103,7 @@ export const relatorioVendas = defineReport<Venda>({
 `app/api/relatorios/vendas/route.ts`):
 
 ```ts
-import { renderReportResponse } from "cosmemilton-report/next";
+import { renderReportResponse } from "@cosmemilton/report/next";
 import { relatorioVendas } from "./relatorio-vendas";
 
 export async function GET(req: Request) {
@@ -114,8 +122,8 @@ export async function GET(req: Request) {
 
 ```tsx
 "use client";
-import { useReportExport } from "cosmemilton-report/client";
-import { CmButton } from "cosmemilton-ui/client";
+import { useReportExport } from "@cosmemilton/report/client";
+import { CmButton } from "@cosmemilton/ui/client";
 
 export function BotaoExportarVendas() {
   const { exportReport, isExporting } = useReportExport({ endpoint: "/api/relatorios/vendas" });
@@ -140,11 +148,11 @@ Prontos para explorar mais: [`examples/04-editor-localstorage.tsx`](./examples/0
 
 | Entry                       | Conteúdo                                                                                                                                                                                     | Peer necessário                     |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `cosmemilton-report`        | Core headless, server-safe, sem imports de dependências em runtime: `defineReport`, `resolveReport`, formatters, registry, storage adapters (memória/localStorage), serializers CSV/TSV/JSON | —                                   |
-| `cosmemilton-report/pdf`    | `createReportDocument`, `renderReportToBuffer`, `renderReportToStream`, `registerReportFonts`, reexport de `Text`/`View`/`StyleSheet`/`Image`                                                | `@react-pdf/renderer`               |
-| `cosmemilton-report/xlsx`   | `exportReportToXlsx`                                                                                                                                                                         | `exceljs`                           |
-| `cosmemilton-report/client` | Hooks (`useReportExport`, `useReportViews`, `useReportDefinitions`) + `CmReportLayoutEditor`, `CmReportPdfPreview`, `CmReportDesigner` (arquivos `"use client"`)                             | `cosmemilton-ui` + `@iconify/react` |
-| `cosmemilton-report/next`   | `reportResponse`, `renderReportResponse` — helpers de route handler (`Response` padrão Web)                                                                                                  | — (`next` é só semântico)           |
+| `@cosmemilton/report`        | Core headless, server-safe, sem imports de dependências em runtime: `defineReport`, `resolveReport`, formatters, registry, storage adapters (memória/localStorage), serializers CSV/TSV/JSON | —                                   |
+| `@cosmemilton/report/pdf`    | `createReportDocument`, `renderReportToBuffer`, `renderReportToStream`, `registerReportFonts`, reexport de `Text`/`View`/`StyleSheet`/`Image`                                                | `@react-pdf/renderer`               |
+| `@cosmemilton/report/xlsx`   | `exportReportToXlsx`                                                                                                                                                                         | `exceljs`                           |
+| `@cosmemilton/report/client` | Hooks (`useReportExport`, `useReportViews`, `useReportDefinitions`) + `CmReportLayoutEditor`, `CmReportPdfPreview`, `CmReportDesigner` (arquivos `"use client"`)                             | `@cosmemilton/ui` + `@iconify/react` |
+| `@cosmemilton/report/next`   | `reportResponse`, `renderReportResponse` — helpers de route handler (`Response` padrão Web)                                                                                                  | — (`next` é só semântico)           |
 
 ## Server ou client?
 
@@ -174,7 +182,7 @@ de server actions — prefira para arquivos pequenos:
 
 ```ts
 "use server";
-import { renderReportToBuffer } from "cosmemilton-report/pdf";
+import { renderReportToBuffer } from "@cosmemilton/report/pdf";
 import { relatorioVendas } from "./relatorio-vendas";
 import type { Venda } from "./relatorio-vendas";
 
@@ -205,7 +213,7 @@ O merge é **explícito por campo** (sem deep-merge genérico) e por seção (`h
 `undefined` herda, campo presente sobrescreve. Exemplo:
 
 ```ts
-import { resolveReport } from "cosmemilton-report";
+import { resolveReport } from "@cosmemilton/report";
 import { relatorioVendas } from "./relatorio-vendas";
 
 const resolved = resolveReport({
@@ -353,7 +361,7 @@ model ReportGlobalConfig {
 //   parseReportGlobalConfig,
 //   parseReportView,
 //   type ReportStorageAdapter,
-// } from "cosmemilton-report";
+// } from "@cosmemilton/report";
 //
 // export function createPrismaReportAdapter(prisma: PrismaClient): ReportStorageAdapter {
 //   return {
@@ -447,7 +455,7 @@ paisagem. As margens padrão são 3 mm em cada lado; margens informadas explicit
 valendo. O cabeçalho se organiza verticalmente e o rodapé aparece após os totais.
 
 ```ts
-import { renderReportToBuffer } from "cosmemilton-report/pdf";
+import { renderReportToBuffer } from "@cosmemilton/report/pdf";
 
 const cupom = await renderReportToBuffer({
   definition: relatorioVendas,
@@ -491,7 +499,7 @@ continuam globais. As bobinas de 58/80 mm permanecem contínuas.
 As três APIs do entry `/pdf` aceitam um segundo argumento opcional, `ReportPdfOptions`:
 
 ```ts
-import { renderReportToBuffer, type ReportPdfOptions } from "cosmemilton-report/pdf";
+import { renderReportToBuffer, type ReportPdfOptions } from "@cosmemilton/report/pdf";
 
 const options: ReportPdfOptions = { engine: "auto", maxRowsPerBlock: 100 }; // padrões
 const buffer = await renderReportToBuffer({ definition: relatorioVendas, rows }, options);
@@ -581,7 +589,7 @@ peso). Para uma fonte própria, registre-a com `registerReportFonts` (entry `/pd
 renderizar — no módulo de setup do app ou no topo do route handler:
 
 ```ts
-import { registerReportFonts } from "cosmemilton-report/pdf";
+import { registerReportFonts } from "@cosmemilton/report/pdf";
 
 registerReportFonts({
   family: "Inter",
@@ -621,7 +629,7 @@ UTF-8 — assim o Excel em português abre o arquivo já separado em colunas, co
 sem passar pelo assistente de importação. Configurável via `CsvOptions`:
 
 ```ts
-import { exportReportToCsv } from "cosmemilton-report";
+import { exportReportToCsv } from "@cosmemilton/report";
 
 const csvInternacional = exportReportToCsv(
   { definition: relatorioVendas, rows },
@@ -649,13 +657,13 @@ Ao desativá-la, o consumidor passa a ser responsável pela interpretação dess
 ## PDF com mais de uma tabela
 
 As APIs `createCompositeReportDocument`, `renderCompositeReportToBuffer` e
-`renderCompositeReportToStream`, exportadas por `cosmemilton-report/pdf`, recebem
+`renderCompositeReportToStream`, exportadas por `@cosmemilton/report/pdf`, recebem
 uma tupla de `ReportRenderInput` com tipos de linha diferentes. Cada relatório
 começa em uma nova página e conserva suas colunas, agrupamentos, resumo,
 cabeçalho, rodapé, orientação e papel. A numeração considera o documento inteiro.
 
 ```ts
-import { renderCompositeReportToBuffer } from "cosmemilton-report/pdf";
+import { renderCompositeReportToBuffer } from "@cosmemilton/report/pdf";
 
 const pdf = await renderCompositeReportToBuffer(
   [

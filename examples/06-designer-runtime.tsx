@@ -11,10 +11,10 @@ import {
   type ReportDataSource,
   type ReportDefinition,
   type SerializableReportDefinition,
-} from "cosmemilton-report";
-import { renderReportResponse } from "cosmemilton-report/next";
-import { CmReportDesigner } from "cosmemilton-report/client";
-import { CmToastProvider } from "cosmemilton-ui/client";
+} from "@cosmemilton/report";
+import { renderReportResponse } from "@cosmemilton/report/next";
+import { CmReportDesigner } from "@cosmemilton/report/client";
+import { CmToastProvider } from "@cosmemilton/ui/client";
 import { relatorioVendas, type Venda } from "./01-minimo.js";
 
 // ---------------------------------------------------------------------------

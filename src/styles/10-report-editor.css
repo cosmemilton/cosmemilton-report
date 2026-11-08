@@ -1,6 +1,6 @@
 /* Estilos do CmReportLayoutEditor, CmReportPdfPreview, CmReportDesigner e
  * CmReportGlobalConfigEditor. Classes BEM `cm-report-editor__*`/`cm-report-preview__*`/
- * `cm-report-designer__*`/`cm-report-config__*`, tokens do tema do cosmemilton-ui com fallbacks
+ * `cm-report-designer__*`/`cm-report-config__*`, tokens do tema do @cosmemilton/ui com fallbacks
  * neutros (para quem usa o pacote sem o tema carregado). O editor e o designer compartilham as
  * classes de lista de colunas e de linhas de switch. */
 

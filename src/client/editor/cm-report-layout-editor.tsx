@@ -15,7 +15,7 @@ import {
   CmTabsList,
   CmTabsTrigger,
   useCmToast,
-} from "cosmemilton-ui/client";
+} from "@cosmemilton/ui/client";
 import { generatePlaceholderRows } from "../../core/placeholder.js";
 import type { ReportDefinition, ReportGlobalConfig, ReportView } from "../../core/types.js";
 import { CmReportPdfPreview } from "../preview/cm-report-pdf-preview.js";
@@ -50,7 +50,7 @@ function joinClassNames(...values: Array<string | false | null | undefined>): st
   return values.filter(Boolean).join(" ");
 }
 
-/** Requer `CmToastProvider` de `cosmemilton-ui/client` acima do editor. */
+/** Requer `CmToastProvider` de `@cosmemilton/ui/client` acima do editor. */
 export function CmReportLayoutEditor<T>(props: CmReportLayoutEditorProps<T>): ReactElement {
   const {
     definition,

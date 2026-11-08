@@ -3,8 +3,8 @@
 // streaming, e mantém `@react-pdf/renderer`/`exceljs` fora do bundle do cliente.
 //
 // No seu projeto, este arquivo vira `app/api/relatorios/vendas/route.ts`.
-import type { ReportOutputFormat } from "cosmemilton-report";
-import { renderReportResponse } from "cosmemilton-report/next";
+import type { ReportOutputFormat } from "@cosmemilton/report";
+import { renderReportResponse } from "@cosmemilton/report/next";
 import { relatorioVendas, type Venda } from "./01-minimo.js";
 
 // `?format=` vem direto da querystring — nunca confie nela sem validar contra uma lista fechada.

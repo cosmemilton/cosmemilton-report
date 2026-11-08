@@ -6,8 +6,8 @@
 // como chips compactos: nome do campo à esquerda; à direita, um botão de ícone "+" para adicionar
 // como coluna, que vira um check + "Coluna já adicionada" quando a `key` já está no rascunho.
 import type { ReactElement } from "react";
-import { CmButton, CmEmpty } from "cosmemilton-ui/client";
-import { CmIcon } from "cosmemilton-ui/server";
+import { CmButton, CmEmpty } from "@cosmemilton/ui/client";
+import { CmIcon } from "@cosmemilton/ui/server";
 import type {
   ReportDataSource,
   ReportDataSourceField,

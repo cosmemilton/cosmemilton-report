@@ -1,6 +1,6 @@
 // Exemplo 01 — o mínimo para ter um relatório: uma definição com 3 colunas e um total no rodapé.
 // `relatorioVendas`/`Venda` são importados pelos demais exemplos (`./01-minimo.js`).
-import { defineReport } from "cosmemilton-report";
+import { defineReport } from "@cosmemilton/report";
 
 export type Venda = { data: string; cliente: string; total: number };
 

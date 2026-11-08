@@ -4,8 +4,8 @@
 // geração ao route handler do exemplo 02 (`fetch` → blob → download), mantendo o bundle do
 // cliente livre de `@react-pdf/renderer`/`exceljs`.
 import type { ReactElement } from "react";
-import { useReportExport } from "cosmemilton-report/client";
-import { CmButton } from "cosmemilton-ui/client";
+import { useReportExport } from "@cosmemilton/report/client";
+import { CmButton } from "@cosmemilton/ui/client";
 
 export function BotaoExportarVendas(): ReactElement {
   const { exportReport, isExporting } = useReportExport({

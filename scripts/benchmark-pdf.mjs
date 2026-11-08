@@ -17,7 +17,7 @@ node scripts/benchmark-pdf.mjs [opções]
   --max-rows-per-block N|false Tamanho dos blocos; false usa a paginação anterior
                              (omitido: padrão da biblioteca)
   --module CAMINHO_OU_FILE_URL Entry /pdf compilado alternativo para comparação
-                             (padrão: cosmemilton-report/pdf)
+                             (padrão: @cosmemilton/report/pdf)
   --heap-mb 512               Limite do old generation do worker, em MiB
   --timeout-ms 110000         Prazo por geração, incluindo inicialização
   --validation auto|text|basic Validação com pdfjs-dist quando disponível (auto)
@@ -44,7 +44,7 @@ function parseOptions(args) {
     timeoutMs: 110000,
     validation: "auto",
     api: "buffer",
-    module: "cosmemilton-report/pdf",
+    module: "@cosmemilton/report/pdf",
   };
   for (let i = 0; i < args.length; i++) {
     const option = args[i];

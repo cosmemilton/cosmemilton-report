@@ -15,7 +15,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
-import { CmToastProvider } from "cosmemilton-ui/client";
+import { CmToastProvider } from "@cosmemilton/ui/client";
 import { parseReportDefinition } from "../../core/parse.js";
 import { createMemoryReportAdapter } from "../../core/storage/memory-adapter.js";
 import type { ReportDataSource, SerializableReportDefinition } from "../../core/types.js";

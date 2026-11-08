@@ -5,8 +5,8 @@
 // item) reescreve a lista INTEIRA em `view.summary`, já que a view SUBSTITUI (não mescla) o
 // summary da definição (ver `resolveReport`/plano, decisão de arquitetura).
 import type { ReactElement } from "react";
-import { CmButton, CmInput, CmSelect } from "cosmemilton-ui/client";
-import { CmIcon } from "cosmemilton-ui/server";
+import { CmButton, CmInput, CmSelect } from "@cosmemilton/ui/client";
+import { CmIcon } from "@cosmemilton/ui/server";
 import type { ReportSummaryItem, ReportSummaryOperation, ReportView } from "../../core/types.js";
 import type { CmReportLayoutEditorLabels } from "./labels.js";
 

@@ -1,5 +1,5 @@
 {
-  "name": "cosmemilton-report",
+  "name": "@cosmemilton/report",
   "version": "0.6.0",
   "description": "Report builder React para Next.js — definição declarativa de relatórios com export em PDF, CSV, XLSX, JSON e TSV, editor visual de layout e config em camadas.",
   "author": "Cosme Milton <milton.cosme@gmail.com>",
@@ -87,8 +87,8 @@
     "prepublishOnly": "npm run typecheck && npm run lint && npm run test"
   },
   "peerDependencies": {
+    "@cosmemilton/ui": ">=4.1.0",
     "@react-pdf/renderer": ">=4.3",
-    "cosmemilton-ui": ">=3.17",
     "exceljs": ">=4.4",
     "next": ">=15",
     "react": ">=18.2 || >=19",
@@ -98,19 +98,20 @@
     "@react-pdf/renderer": {
       "optional": true
     },
-    "cosmemilton-ui": {
-      "optional": true
-    },
     "exceljs": {
       "optional": true
     },
     "next": {
+      "optional": true
+    },
+    "@cosmemilton/ui": {
       "optional": true
     }
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
     "@changesets/cli": "^2.31.0",
+    "@cosmemilton/ui": "^4.1.0",
     "@eslint/js": "^9.39.4",
     "@iconify/react": "^6.0.2",
     "@react-pdf/renderer": "^4.3.2",
@@ -124,7 +125,6 @@
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.7",
     "autoprefixer": "^10.5.0",
-    "cosmemilton-ui": "^3.17.0",
     "cssnano": "^8.0.1",
     "eslint": "^9.39.4",
     "eslint-plugin-jsx-a11y": "^6.10.2",

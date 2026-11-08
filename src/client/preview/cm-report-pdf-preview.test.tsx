@@ -11,7 +11,7 @@ import { CmReportPdfPreview } from "./cm-report-pdf-preview.js";
 
 // `@react-pdf/renderer` e `../../pdf.js` (que o reexporta) são carregados via `import()` dinâmico
 // pelo componente — `vi.mock` intercepta esses imports dinâmicos do mesmo jeito que intercepta
-// imports estáticos (mesmo padrão usado para o `leaflet` em `cosmemilton-ui/map.test.tsx`).
+// imports estáticos (mesmo padrão usado para o `leaflet` em `@cosmemilton/ui/map.test.tsx`).
 // `vi.hoisted` porque as factories de `vi.mock` são içadas para o topo do arquivo.
 const h = vi.hoisted(() => {
   const toBlobMock = vi.fn(async () => new Blob(["%PDF-mock"]));

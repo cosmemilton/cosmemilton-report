@@ -3,9 +3,9 @@
 // StyleTab — aba "Estilo" do editor: tamanho de fonte, zebra/grade, densidade e cor de destaque.
 // Mesma precedência de exibição do `resolveReport` (view > definição > globalConfig > default,
 // ver `HeaderTab`); cada edição grava um patch raso em `view.style`. `accentColor` usa
-// `<input type="color">` nativo — o cosmemilton-ui não tem um color picker.
+// `<input type="color">` nativo — o @cosmemilton/ui não tem um color picker.
 import type { ReactElement } from "react";
-import { CmInput, CmSelect, CmSwitch } from "cosmemilton-ui/client";
+import { CmInput, CmSelect, CmSwitch } from "@cosmemilton/ui/client";
 import { defaultReportStyle } from "../../core/defaults.js";
 import type { ReportGlobalConfig, ReportStyleConfig, ReportView } from "../../core/types.js";
 import type { CmReportLayoutEditorLabels } from "./labels.js";

@@ -7,7 +7,7 @@
 // emite só a chave que edita — quem chama decide como mesclar o patch (upsert de override aqui,
 // merge direto na coluna lá).
 import type { ReactElement } from "react";
-import { CmInput, CmSelect } from "cosmemilton-ui/client";
+import { CmInput, CmSelect } from "@cosmemilton/ui/client";
 import type { ReportColumnAlign, ReportFormat } from "../../core/types.js";
 
 /** Rótulos usados pelos campos de coluna. Qualquer objeto com estas chaves serve — o
@@ -116,7 +116,7 @@ export type ColumnWidthFieldProps = {
 };
 
 /** `CmInput inputMode="numeric"` já sanitiza a digitação para dígitos (ver `resolveNumericMode`
- *  em cosmemilton-ui/input) — só convertemos o número puro digitado para `"NN%"` no patch. */
+ *  em @cosmemilton/ui/input) — só convertemos o número puro digitado para `"NN%"` no patch. */
 export function ColumnWidthField({
   value,
   onChange,

@@ -34,8 +34,8 @@ import {
   CmTabsList,
   CmTabsTrigger,
   useCmToast,
-} from "cosmemilton-ui/client";
-import { CmIcon } from "cosmemilton-ui/server";
+} from "@cosmemilton/ui/client";
+import { CmIcon } from "@cosmemilton/ui/server";
 import { generatePlaceholderRows } from "../../core/placeholder.js";
 import { parseReportDefinition } from "../../core/parse.js";
 import type { ReportStorageAdapter } from "../../core/storage/adapter.js";
@@ -343,7 +343,7 @@ function DesignerColumnsTab(props: {
 
 // ---------- componente principal ----------
 
-/** Requer `CmToastProvider` de `cosmemilton-ui/client` acima do designer. */
+/** Requer `CmToastProvider` de `@cosmemilton/ui/client` acima do designer. */
 export function CmReportDesigner(props: CmReportDesignerProps): ReactElement {
   const {
     dataSources,

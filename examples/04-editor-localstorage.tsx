@@ -10,9 +10,9 @@ import {
   createLocalStorageReportAdapter,
   type ReportDefinition,
   type ReportView,
-} from "cosmemilton-report";
-import { CmReportLayoutEditor, useReportViews } from "cosmemilton-report/client";
-import { CmAlert, CmButton, CmSelect, CmToastProvider, useCmToast } from "cosmemilton-ui/client";
+} from "@cosmemilton/report";
+import { CmReportLayoutEditor, useReportViews } from "@cosmemilton/report/client";
+import { CmAlert, CmButton, CmSelect, CmToastProvider, useCmToast } from "@cosmemilton/ui/client";
 import { relatorioVendas } from "./01-minimo.js";
 
 // Factory pura — `options.storage` só é acessado dentro dos métodos do adapter, então é seguro

@@ -2,7 +2,7 @@
 //
 // Tudo é embrulhado em @layer cm.report — CSS sem layer do consumidor sempre
 // vence, então sobrescrever um estilo do editor nunca exige guerra de
-// especificidade (mesmo padrão do cosmemilton-ui).
+// especificidade (mesmo padrão do @cosmemilton/ui).
 //
 // Partials numerados (NN-*.css) preservam a ordem da cascata via sort lexical.
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";

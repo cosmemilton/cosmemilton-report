@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 
-// jsdom não implementa as APIs de observer usadas por componentes do cosmemilton-ui.
+// jsdom não implementa as APIs de observer usadas por componentes do @cosmemilton/ui.
 class NoopObserver {
   observe() {}
   unobserve() {}

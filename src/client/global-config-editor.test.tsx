@@ -3,7 +3,7 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CmToastProvider } from "cosmemilton-ui/client";
+import { CmToastProvider } from "@cosmemilton/ui/client";
 import type { ReportGlobalConfig } from "../core/types.js";
 import { CmReportGlobalConfigEditor } from "./global-config-editor.js";
 
