@@ -24,7 +24,7 @@ const definition = {
 };
 const base = process.argv[2] ?? tmpdir();
 await mkdir(base, { recursive: true });
-const output = await mkdtemp(join(base, "@cosmemilton/report-row-break-"));
+const output = await mkdtemp(join(base, "cosmemilton-report-row-break-"));
 const resultados = [];
 for (const [engine, maxRowsPerBlock] of [
   ["auto", 100],
