@@ -5,8 +5,8 @@
 // formato e reordenação (subir/descer). Toda edição sai por `onViewChange` como overrides
 // serializáveis (`ReportViewColumn[]`) — nunca a coluna inteira da definição.
 import type { ReactElement } from "react";
-import { CmButton, CmSwitch } from "cosmemilton-ui/client";
-import { CmIcon } from "cosmemilton-ui/server";
+import { CmButton, CmSwitch } from "@cosmemilton/ui/client";
+import { CmIcon } from "@cosmemilton/ui/server";
 import { resolveColumns } from "../../core/columns.js";
 import type { ReportDefinition, ReportView, ReportViewColumn } from "../../core/types.js";
 import {

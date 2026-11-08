@@ -9,10 +9,10 @@
 // O logotipo aceita URL/data-URI digitado OU upload de arquivo de imagem, convertido para data URI
 // via FileReader — data URI funciona igual no PDF (server e client) sem depender de hospedagem.
 // O `<input type="file">` nativo fica oculto e é acionado por um CmButton (mesma abordagem do
-// `<input type="color">` no StyleTab: o cosmemilton-ui não tem primitivo para isso).
+// `<input type="color">` no StyleTab: o @cosmemilton/ui não tem primitivo para isso).
 import { useRef, type ReactElement } from "react";
-import { CmButton, CmInput, CmSelect, CmSwitch, useCmToast } from "cosmemilton-ui/client";
-import { CmIcon } from "cosmemilton-ui/server";
+import { CmButton, CmInput, CmSelect, CmSwitch, useCmToast } from "@cosmemilton/ui/client";
+import { CmIcon } from "@cosmemilton/ui/server";
 import { getReportPageDefaults } from "../core/defaults.js";
 import type { ReportGlobalConfig, ReportOrientation, ReportPaperSize } from "../core/types.js";
 

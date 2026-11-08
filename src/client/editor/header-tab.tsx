@@ -6,7 +6,7 @@
 // `header`/`style`) já mostre corretamente o que a definição de código configura — mas cada
 // edição grava só um patch raso em `view.header`, nunca a definição.
 import type { ReactElement } from "react";
-import { CmInput, CmSwitch } from "cosmemilton-ui/client";
+import { CmInput, CmSwitch } from "@cosmemilton/ui/client";
 import { defaultReportHeader } from "../../core/defaults.js";
 import type { ReportGlobalConfig, ReportHeaderConfig, ReportView } from "../../core/types.js";
 import type { CmReportLayoutEditorLabels } from "./labels.js";

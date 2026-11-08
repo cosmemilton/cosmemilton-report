@@ -7,7 +7,7 @@
 // quando não há coluna de agrupamento escolhida — não faz sentido configurar o subtotal de um
 // agrupamento inexistente.
 import type { ReactElement } from "react";
-import { CmSelect, CmSwitch } from "cosmemilton-ui/client";
+import { CmSelect, CmSwitch } from "@cosmemilton/ui/client";
 import type { SerializableReportColumn, SerializableReportDefinition } from "../../core/types.js";
 import type { CmReportDesignerLabels } from "./labels.js";
 

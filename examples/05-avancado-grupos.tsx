@@ -1,8 +1,8 @@
 // Exemplo 05 — recursos avançados: agrupamento com subtotal, coluna com renderização PDF
 // condicional (cor conforme o valor da célula) e uma seção customizada após o sumário.
-import { defineReport } from "cosmemilton-report";
-import type { ReportPdfCellContext } from "cosmemilton-report";
-import { Text } from "cosmemilton-report/pdf";
+import { defineReport } from "@cosmemilton/report";
+import type { ReportPdfCellContext } from "@cosmemilton/report";
+import { Text } from "@cosmemilton/report/pdf";
 
 export type VendaDetalhada = {
   vendedor: string;
@@ -25,7 +25,7 @@ export const relatorioVendasPorVendedor = defineReport<VendaDetalhada>({
       width: "15%",
       // Usado por TODOS os formatos (CSV/XLSX/JSON/PDF sem `pdfRender` custom).
       exportValue: (row) => (row.total > 500 ? "Alto" : "Normal"),
-      // Só o PDF: cor condicional via `Text` reexportado de `cosmemilton-report/pdf` — assim o
+      // Só o PDF: cor condicional via `Text` reexportado de `@cosmemilton/report/pdf` — assim o
       // código do app não precisa depender diretamente de `@react-pdf/renderer`.
       pdfRender: (ctx: ReportPdfCellContext<VendaDetalhada>) => (
         <Text style={{ color: ctx.value === "Alto" ? "#b91c1c" : "#111827" }}>{ctx.formatted}</Text>

@@ -10,7 +10,7 @@ import { useState, type ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render as renderComponent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CmToastProvider } from "cosmemilton-ui/client";
+import { CmToastProvider } from "@cosmemilton/ui/client";
 import type { ReportDefinition, ReportView } from "../../core/types.js";
 import type { CmReportPdfPreviewProps } from "../preview/cm-report-pdf-preview.js";
 import { CmReportLayoutEditor } from "./cm-report-layout-editor.js";

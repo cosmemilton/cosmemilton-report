@@ -2,7 +2,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
-import { CmToastProvider } from "cosmemilton-ui/client";
+import { CmToastProvider } from "@cosmemilton/ui/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryReportAdapter } from "../../core/storage/memory-adapter.js";
 import type { SerializableReportDefinition } from "../../core/types.js";

@@ -1,4 +1,4 @@
-// Tipos centrais do cosmemilton-report.
+// Tipos centrais do @cosmemilton/report.
 // Este módulo não importa nada em runtime (só type-only de "react"), garantindo
 // que o entry core continue zero-dependency e seguro para uso no servidor.
 import type { ReactElement } from "react";

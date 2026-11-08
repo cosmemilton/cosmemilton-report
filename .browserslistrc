@@ -1,4 +1,4 @@
-# Alvo de browsers do CSS publicado (autoprefixer/cssnano) — mesmo baseline do cosmemilton-ui.
+# Alvo de browsers do CSS publicado (autoprefixer/cssnano) — mesmo baseline do @cosmemilton/ui.
 chrome >= 111
 edge >= 111
 firefox >= 113

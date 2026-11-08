@@ -48,7 +48,7 @@ export type CmReportPdfPreviewProps<T> = {
   onError?: (error: Error) => void;
 };
 
-/** Join simples de classes — este entry não importa utilitários do cosmemilton-ui (o `/client`
+/** Join simples de classes — este entry não importa utilitários do @cosmemilton/ui (o `/client`
  *  deste pacote não deve depender de outro pacote de UI para uma junção de strings). */
 function joinClassNames(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
